@@ -8,6 +8,8 @@ import net.corda.core.identity.SignedKeyToPartyMapping
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
+import net.corda.createSignedPublicKey
+import net.corda.validateSignature
 import java.util.*
 
 class ShareKeyFlow(private val session: FlowSession, private val uuid: UUID) : FlowLogic<Unit>() {
@@ -40,7 +42,7 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
             "Expected a signature by ${otherSession.counterparty.owningKey.toBase58String()}, but received by ${signedKey.signature.by.toBase58String()}}"
         }
         progressTracker.currentStep = VERIFYING_SIGNATURE
-        validateSignature(signedKey)
+//        validateSignature(signedKey)
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
         val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKey)
