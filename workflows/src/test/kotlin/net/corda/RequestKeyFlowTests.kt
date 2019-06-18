@@ -1,13 +1,13 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.SignedKeyToPartyMapping
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.SignedKeyToPartyMapping
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.finance.DOLLARS

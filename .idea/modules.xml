@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/confidential-identities.iml" filepath="$PROJECT_DIR$/confidential-identities.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/confidential-identities.main.iml" filepath="$PROJECT_DIR$/.idea/modules/confidential-identities.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/confidential-identities.test.iml" filepath="$PROJECT_DIR$/.idea/modules/confidential-identities.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.iml" filepath="$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.integrationTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.main.iml" filepath="$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.test.iml" filepath="$PROJECT_DIR$/.idea/modules/workflows/confidential-identities.workflows.test.iml" />
+    </modules>
+  </component>
+</project>

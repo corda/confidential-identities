@@ -56,7 +56,8 @@ class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
 data class KeyToPartyMapping(val key: PublicKey, val party: Party)
 
 @CordaSerializable
-data class SignedKeyToPartyMapping(
+data class
+SignedKeyToPartyMapping(
         val mapping: KeyToPartyMapping,
         val signature: DigitalSignature.WithKey
 )

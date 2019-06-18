@@ -1,10 +1,10 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.SignedKeyToPartyMapping
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.identity.SignedKeyToPartyMapping
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
@@ -42,14 +42,14 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
             "Expected a signature by ${otherSession.counterparty.owningKey.toBase58String()}, but received by ${signedKey.signature.by.toBase58String()}}"
         }
         progressTracker.currentStep = VERIFYING_SIGNATURE
-//        validateSignature(signedKey)
+        validateSignature(signedKey)
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
-        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKey)
-        val party = signedKey.mapping.party
-        if (!isRegistered) {
-            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
-        }
+//        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKey)
+//        val party = signedKey.mapping.party
+//        if (!isRegistered) {
+//            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
+//        }
         return signedKey
     }
 }
