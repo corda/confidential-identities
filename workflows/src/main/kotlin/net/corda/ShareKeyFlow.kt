@@ -45,11 +45,11 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
         validateSignature(signedKey)
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
-//        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKey)
-//        val party = signedKey.mapping.party
-//        if (!isRegistered) {
-//            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
-//        }
+        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKey)
+        val party = signedKey.mapping.party
+        if (!isRegistered) {
+            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
+        }
         return signedKey
     }
 }
