@@ -2,7 +2,9 @@ package net.corda
 
 import net.corda.core.CordaInternal
 import net.corda.core.crypto.DigitalSignature
+import net.corda.core.identity.KeyToPartyMapping
 import net.corda.core.identity.Party
+import net.corda.core.identity.SignedKeyToPartyMapping
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.CordaSerializable
@@ -51,13 +53,3 @@ class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
     val uuid: UUID?
         get() = _uuid
 }
-
-@CordaSerializable
-data class KeyToPartyMapping(val key: PublicKey, val party: Party)
-
-@CordaSerializable
-data class
-SignedKeyToPartyMapping(
-        val mapping: KeyToPartyMapping,
-        val signature: DigitalSignature.WithKey
-)
