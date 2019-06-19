@@ -1,10 +1,10 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.SignedKeyToPartyMapping
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
+import net.corda.core.identity.SignedKeyToPartyMapping
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap

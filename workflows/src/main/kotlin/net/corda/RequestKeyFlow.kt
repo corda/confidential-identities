@@ -5,6 +5,7 @@ import net.corda.*
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
+import net.corda.core.identity.SignedKeyToPartyMapping
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
@@ -47,11 +48,11 @@ class RequestKeyFlow(
         validateSignature(signedKeyMapping)
         progressTracker.currentStep = KEY_VERIFIED
 
-//        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKeyMapping)
+        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedKeyMapping)
         val party = signedKeyMapping.mapping.party
-//        if (!isRegistered) {
-//            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
-//        }
+        if (!isRegistered) {
+            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
+        }
         return signedKeyMapping
     }
 }

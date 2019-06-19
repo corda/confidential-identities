@@ -12,6 +12,7 @@ import net.corda.core.serialization.serialize
 import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.unwrap
 import net.corda.finance.DOLLARS
 import net.corda.finance.contracts.asset.Cash
 import net.corda.finance.flows.CashIssueAndPaymentFlow
@@ -118,8 +119,7 @@ private class SyncKeyMappingInitiator(private val otherParty: Party, private val
     override fun call() : Boolean {
         val session = initiateFlow(otherParty)
         subFlow(SyncKeyMappingFlow(session, tx))
-//        return session.receive<Boolean>().unwrap{ it }
-        return true
+        return session.receive<Boolean>().unwrap{ it }
     }
 }
 

@@ -18,11 +18,11 @@ sourceSets {
             srcDir rootProject.file("config/dev")
         }
     }
-//    test {
-//        resources {
-//            srcDir rootProject.file("config/test")
-//        }
-//    }
+    test {
+        resources {
+            srcDir rootProject.file("config/test")
+        }
+    }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
@@ -40,7 +40,6 @@ configurations {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-//    cordaCompile "$corda_release_group:corda-finance-workflows:$corda_release_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
 
@@ -49,7 +48,9 @@ dependencies {
     cordaRuntime "$corda_release_group:corda:$corda_release_version"
     testCompile "$corda_release_group:corda-finance-workflows:$corda_release_version"
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
-//    testCompile group: 'org.gradle', name: 'gradle-tooling-api', version: '4.10.3'
+    testCompile "junit:junit:$junit_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "junit:junit:$junit_version"
 
 }
 
