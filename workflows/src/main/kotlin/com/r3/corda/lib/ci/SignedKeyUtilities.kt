@@ -6,6 +6,7 @@ import net.corda.core.crypto.newSecureRandom
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.VisibleForTesting
+import net.corda.core.internal.hash
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.deserialize

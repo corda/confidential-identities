@@ -28,10 +28,8 @@ class ShareKeyFlowTests {
     private lateinit var mockNet: InternalMockNetwork
     private lateinit var aliceNode: TestStartedNode
     private lateinit var bobNode: TestStartedNode
-    private lateinit var charlieNode: TestStartedNode
     private lateinit var alice: Party
     private lateinit var bob: Party
-    private lateinit var charlie: Party
     private lateinit var notary: Party
 
     @Before
@@ -43,17 +41,14 @@ class ShareKeyFlowTests {
 
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
-        charlieNode = mockNet.createPartyNode(CHARLIE_NAME)
         alice = aliceNode.info.singleIdentity()
         bob = bobNode.info.singleIdentity()
-        charlie = bobNode.info.singleIdentity()
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
 
         aliceNode.registerInitiatedFlow(ShareKeyResponder::class.java)
         bobNode.registerInitiatedFlow(ShareKeyResponder::class.java)
-        charlieNode.registerInitiatedFlow(ShareKeyResponder::class.java)
     }
 
     @After

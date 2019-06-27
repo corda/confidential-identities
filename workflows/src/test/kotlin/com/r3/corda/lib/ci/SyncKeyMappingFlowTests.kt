@@ -1,13 +1,24 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.ci.ConfidentialIdentityWrapper
+import com.r3.corda.lib.ci.RequestKeyFlowWrapperHandler
 import com.r3.corda.lib.ci.createSignedOwnershipClaim
 import com.r3.corda.lib.ci.getPartyFromSignedOwnershipClaim
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.contracts.types.TokenType
+import com.r3.corda.lib.tokens.contracts.utilities.heldBy
+import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
+import com.r3.corda.lib.tokens.contracts.utilities.of
+import com.r3.corda.lib.tokens.money.USD
+import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.core.internal.hash
 import net.corda.core.serialization.deserialize
 import net.corda.core.transactions.WireTransaction
 import net.corda.core.utilities.OpaqueBytes
@@ -47,8 +58,13 @@ class SyncKeyMappingFlowTests {
     fun before() {
         mockNet = InternalMockNetwork(
                 cordappsForAllNodes = FINANCE_CORDAPPS,
+                cordappPackages = listOf(
+                        "com.r3.corda.lib.tokens.contracts",
+                        "com.r3.corda.lib.tokens.workflows",
+                        "com.r3.corda.lib.ci"),
                 networkSendManuallyPumped = false,
                 threadPerNode = true)
+
 
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
@@ -59,7 +75,9 @@ class SyncKeyMappingFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-
+        aliceNode.registerInitiatedFlow(SyncKeyMappingResponse::class.java)
+        bobNode.registerInitiatedFlow(SyncKeyMappingResponse::class.java)
+        charlieNode.registerInitiatedFlow(RequestKeyFlowWrapperHandler::class.java)
     }
 
     @After
@@ -70,15 +88,22 @@ class SyncKeyMappingFlowTests {
     @Test
     fun `sync the key mapping between two parties in a transaction`() {
         // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonymous = true
-        val ref = OpaqueBytes.of(0x01)
-        val issueFlow = aliceNode.services.startFlow(CashIssueAndPaymentFlow(1000.DOLLARS, ref, alice, anonymous, notary)).resultFuture
-        val issueTx = issueFlow.getOrThrow().stx
-        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<Cash.State>().single().owner
+        val anonymousParty = aliceNode.services.startFlow(ConfidentialIdentityWrapper(charlie)).resultFuture.getOrThrow()
+
+        val issueFlow = aliceNode.services.startFlow(
+                IssueTokens(1000 of USD issuedBy alice heldBy AnonymousParty(anonymousParty.owningKey))
+        )
+        val issueTx = issueFlow.resultFuture.getOrThrow()
+        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
+
         assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
         // Run the flow to sync up the identities
-        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, issueTx.tx)).resultFuture.getOrThrow()
+        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, issueTx.tx)).let {
+            mockNet.waitQuiescent()
+            it.resultFuture.getOrThrow()
+        }
+
         val expected = aliceNode.database.transaction {
             aliceNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
         }
@@ -87,36 +112,13 @@ class SyncKeyMappingFlowTests {
         }
         assertEquals(expected, actual)
     }
-
-    @Test
-    fun `don't leak confidential identities`() {
-        // Charlie issues then pays some cash to a new confidential identity
-        val anonymous = true
-        val ref = OpaqueBytes.of(0x01)
-        val issueFlow = charlieNode.services.startFlow(CashIssueAndPaymentFlow(1000.DOLLARS, ref, charlie, anonymous, notary))
-        val issueTx = issueFlow.resultFuture.getOrThrow().stx
-        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<Cash.State>().single().owner
-
-        // Manually inject this identity into Alice's database so the node could leak it, but we prove won't
-        aliceNode.services.startFlow(InjectConfidentialId(charlie, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
-
-        // Generate a payment from Charlie to Alice, including the confidential state
-        val payTx = charlieNode.services.startFlow(CashPaymentFlow(1000.DOLLARS, alice, anonymous)).resultFuture.getOrThrow().stx
-
-        // Run the flow to sync up the identities, and confirm Charlie's confidential identity doesn't leak
-        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, payTx.tx)).resultFuture.getOrThrow()
-        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-    }
 }
 
 @InitiatingFlow
-private class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Boolean>() {
+private class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Unit>() {
     @Suspendable
-    override fun call() : Boolean {
-        val session = initiateFlow(otherParty)
-        subFlow(SyncKeyMappingFlow(session, tx))
-        return session.receive<Boolean>().unwrap{ it }
+    override fun call() {
+        subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
     }
 }
 
@@ -125,18 +127,6 @@ private class SyncKeyMappingResponse(private val otherSession: FlowSession) : Fl
     @Suspendable
     override fun call() {
         subFlow(SyncKeyMappingFlowHandler(otherSession))
-        otherSession.send(true)
     }
 }
-
-@InitiatingFlow
-private class InjectConfidentialId(private val party: Party, private val key: PublicKey) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        val signedOwnershipClaim = createSignedOwnershipClaim(serviceHub, UUID.randomUUID())
-        val party = getPartyFromSignedOwnershipClaim(serviceHub, signedOwnershipClaim)
-        serviceHub.identityService.registerKeyToParty(signedOwnershipClaim.raw.deserialize().key, party!!)
-    }
-}
-
 

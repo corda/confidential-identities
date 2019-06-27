@@ -13,7 +13,7 @@ import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 
-class SyncKeyMappingFlow(private val session: FlowSession, val tx: WireTransaction) : FlowLogic<Unit>() {
+class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireTransaction) : FlowLogic<Unit>() {
 
     companion object {
         object SYNCING_KEY_MAPPINGS : ProgressTracker.Step("Syncing key mappings.")

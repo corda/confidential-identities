@@ -95,7 +95,7 @@ class RequestKeyFlowTests {
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
         // Verify Bob cannot resolve the CI before we create a signed mapping of the CI key
         assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-        bobNode.services.startFlow(RequestKeyFlowWrapper(charlie, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
+        bobNode.services.startFlow(RequestKeyFlowWrapper(alice, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
 
         val expected = charlieNode.database.transaction {
             charlieNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
