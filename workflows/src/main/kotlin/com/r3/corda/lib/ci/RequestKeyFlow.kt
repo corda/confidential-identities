@@ -1,16 +1,11 @@
 package com.r3.corda.lib.ci
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.CreateKeyForAccount
-import com.r3.corda.lib.ci.createSignedOwnershipClaim
-import com.r3.corda.lib.ci.createSignedOwnershipClaimFromKnownKey
-import com.r3.corda.lib.ci.validateSignature
-import net.corda.*
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
+import com.r3.corda.lib.ci.OwnershipClaim
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.identity.OwnershipClaim
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
@@ -58,7 +53,7 @@ class RequestKeyFlow(
         val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.sig.by))
                 ?: throw FlowException("Could not resolve party for key ${signedOwnershipClaim.sig.by}")
         val newKey = signedOwnershipClaim.raw.deserialize().key
-        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(newKey, party)
+        val isRegistered = serviceHub.identityService.registerKeyToParty(newKey, party)
         if (!isRegistered) {
             throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
         }

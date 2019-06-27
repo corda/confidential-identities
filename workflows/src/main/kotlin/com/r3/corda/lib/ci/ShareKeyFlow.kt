@@ -1,12 +1,12 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.ci.OwnershipClaim
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.identity.OwnershipClaim
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
@@ -50,7 +50,7 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
 
         val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.sig.by))
                 ?: throw FlowException("Could not resolve party for key ${signedOwnershipClaim.sig.by}")
-        val isRegistered = serviceHub.identityService.registerPublicKeyToPartyMapping(signedOwnershipClaim.raw.deserialize().key, party)
+        val isRegistered = serviceHub.identityService.registerKeyToParty(signedOwnershipClaim.raw.deserialize().key, party)
         if (!isRegistered) {
             throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
         }

@@ -2,8 +2,8 @@ package com.r3.corda.lib.ci
 
 import net.corda.core.CordaInternal
 import net.corda.core.crypto.SignedData
+import net.corda.core.crypto.newSecureRandom
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.identity.OwnershipClaim
 import net.corda.core.identity.Party
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
@@ -11,16 +11,19 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.deserialize
 import net.corda.core.serialization.serialize
 import net.corda.core.utilities.OpaqueBytes
+import java.math.BigInteger
 import java.security.PublicKey
 import java.security.SignatureException
 import java.util.*
+
 
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaim(serviceHub: ServiceHub, uuid: UUID): SignedData<OwnershipClaim> {
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
-    val ownershipClaim = OwnershipClaim(OpaqueBytes.of(0), newKey)
+    val nonce = BigInteger(123, newSecureRandom()).toByte()
+    val ownershipClaim = OwnershipClaim(OpaqueBytes.of(nonce), newKey)
     val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
     return SignedData(ownershipClaim.serialize(), sig)
 }
@@ -29,7 +32,8 @@ fun createSignedOwnershipClaim(serviceHub: ServiceHub, uuid: UUID): SignedData<O
 @VisibleForTesting
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, knownKey: PublicKey): SignedData<OwnershipClaim> {
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
-    val ownershipClaim = OwnershipClaim(OpaqueBytes.of(0), knownKey)
+    val nonce = BigInteger(123, newSecureRandom()).toByte()
+    val ownershipClaim = OwnershipClaim(OpaqueBytes.of(nonce), knownKey)
     val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
     return SignedData(ownershipClaim.serialize(), sig)
 }
@@ -61,3 +65,10 @@ class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
     val uuid: UUID?
         get() = _uuid
 }
+
+/**
+ * To be used in conjuction with [SignedData] when using confidential identities. The [PublicKey] represents the owning key of a
+ * confidential identity.
+ */
+@CordaSerializable
+data class OwnershipClaim(val nonce: OpaqueBytes, val key: PublicKey)

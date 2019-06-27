@@ -135,7 +135,7 @@ private class InjectConfidentialId(private val party: Party, private val key: Pu
     override fun call() {
         val signedOwnershipClaim = createSignedOwnershipClaim(serviceHub, UUID.randomUUID())
         val party = getPartyFromSignedOwnershipClaim(serviceHub, signedOwnershipClaim)
-        serviceHub.identityService.registerPublicKeyToPartyMapping(signedOwnershipClaim.raw.deserialize().key, party!!)
+        serviceHub.identityService.registerKeyToParty(signedOwnershipClaim.raw.deserialize().key, party!!)
     }
 }
 

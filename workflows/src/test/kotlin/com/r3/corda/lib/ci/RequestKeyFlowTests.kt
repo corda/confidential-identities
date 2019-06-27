@@ -87,7 +87,6 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val ref = OpaqueBytes.of(0x01)
         val anonymousParty = charlieNode.services.startFlow(ConfidentialIdentityWrapper(alice)).resultFuture.getOrThrow()
         val issueFlow = charlieNode.services.startFlow(
                 IssueTokens(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey))
