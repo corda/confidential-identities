@@ -72,19 +72,3 @@ class RequestKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<U
         }
     }
 }
-
-@InitiatingFlow
-class RequestKeyFlowWrapper(private val party: Party, private val key: PublicKey): FlowLogic<SignedData<OwnershipClaim>>() {
-    @Suspendable
-    override fun call(): SignedData<OwnershipClaim> {
-        return subFlow(RequestKeyFlow(initiateFlow(party), key))
-    }
-}
-
-@InitiatedBy(RequestKeyFlowWrapper::class)
-class RequestKeyFlowWrapperHandler(private val otherSession: FlowSession) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        return subFlow(RequestKeyFlowHandler(otherSession))
-    }
-}

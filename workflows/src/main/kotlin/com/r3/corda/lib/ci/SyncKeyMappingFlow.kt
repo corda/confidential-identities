@@ -1,7 +1,7 @@
 package net.corda.confidential.identities
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.RequestKeyFlowWrapper
+import com.r3.corda.lib.ci.RequestKeyInitiator
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.TransactionResolutionException
 import net.corda.core.flows.FlowLogic
@@ -89,7 +89,7 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         progressTracker.currentStep = REQUESTING_PROOF_OF_ID
 
         mapConfidentialKeyToParty.forEach {
-            subFlow(RequestKeyFlowWrapper(it.value, it.key))
+            subFlow(RequestKeyInitiator(it.value, it.key))
         }
         progressTracker.currentStep = IDENTITIES_SYNCHRONISED
         return true

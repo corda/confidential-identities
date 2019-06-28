@@ -10,7 +10,6 @@ import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
-import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
@@ -70,7 +69,7 @@ class RequestKeyFlowTests {
         // Alice requests that bob generates a new key for an account
         val keyForBob = aliceNode.services.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).resultFuture
 
-        val bobKey = keyForBob.getOrThrow().raw.deserialize().key
+        val bobKey = keyForBob.getOrThrow()?.raw?.deserialize()?.key ?: throw IllegalArgumentException("")
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -87,7 +86,7 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = charlieNode.services.startFlow(ConfidentialIdentityWrapper(alice)).resultFuture.getOrThrow()
+        val anonymousParty = charlieNode.services.startFlow(ConfidentialIdentityInitiator(alice)).resultFuture.getOrThrow()
         val issueFlow = charlieNode.services.startFlow(
                 IssueTokens(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey))
         )
@@ -95,7 +94,7 @@ class RequestKeyFlowTests {
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
         // Verify Bob cannot resolve the CI before we create a signed mapping of the CI key
         assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-        bobNode.services.startFlow(RequestKeyFlowWrapper(alice, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
+        bobNode.services.startFlow(RequestKeyInitiator(alice, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
 
         val expected = charlieNode.database.transaction {
             charlieNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)

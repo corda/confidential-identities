@@ -1,10 +1,9 @@
 package net.corda.confidential.identities
 
-import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.ConfidentialIdentityWrapper
-import com.r3.corda.lib.ci.RequestKeyFlowWrapperHandler
-import com.r3.corda.lib.ci.createSignedOwnershipClaim
-import com.r3.corda.lib.ci.getPartyFromSignedOwnershipClaim
+import com.r3.corda.lib.ci.ConfidentialIdentityInitiator
+import com.r3.corda.lib.ci.RequestKeyResponder
+import com.r3.corda.lib.ci.SyncKeyMappingInitiator
+import com.r3.corda.lib.ci.SyncKeyMappingResponder
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
@@ -12,22 +11,9 @@ import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
-import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.FlowSession
-import net.corda.core.flows.InitiatedBy
-import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
-import net.corda.core.internal.hash
-import net.corda.core.serialization.deserialize
-import net.corda.core.transactions.WireTransaction
-import net.corda.core.utilities.OpaqueBytes
 import net.corda.core.utilities.getOrThrow
-import net.corda.core.utilities.unwrap
-import net.corda.finance.DOLLARS
-import net.corda.finance.contracts.asset.Cash
-import net.corda.finance.flows.CashIssueAndPaymentFlow
-import net.corda.finance.flows.CashPaymentFlow
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
@@ -39,8 +25,6 @@ import net.corda.testing.node.internal.startFlow
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.security.PublicKey
-import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -75,9 +59,9 @@ class SyncKeyMappingFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-        aliceNode.registerInitiatedFlow(SyncKeyMappingResponse::class.java)
-        bobNode.registerInitiatedFlow(SyncKeyMappingResponse::class.java)
-        charlieNode.registerInitiatedFlow(RequestKeyFlowWrapperHandler::class.java)
+        aliceNode.registerInitiatedFlow(SyncKeyMappingResponder::class.java)
+        bobNode.registerInitiatedFlow(SyncKeyMappingResponder::class.java)
+        charlieNode.registerInitiatedFlow(RequestKeyResponder::class.java)
     }
 
     @After
@@ -88,7 +72,7 @@ class SyncKeyMappingFlowTests {
     @Test
     fun `sync the key mapping between two parties in a transaction`() {
         // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonymousParty = aliceNode.services.startFlow(ConfidentialIdentityWrapper(charlie)).resultFuture.getOrThrow()
+        val anonymousParty = aliceNode.services.startFlow(ConfidentialIdentityInitiator(charlie)).resultFuture.getOrThrow()
 
         val issueFlow = aliceNode.services.startFlow(
                 IssueTokens(1000 of USD issuedBy alice heldBy AnonymousParty(anonymousParty.owningKey))
@@ -114,19 +98,4 @@ class SyncKeyMappingFlowTests {
     }
 }
 
-@InitiatingFlow
-private class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
-    }
-}
-
-@InitiatedBy(SyncKeyMappingInitiator::class)
-private class SyncKeyMappingResponse(private val otherSession: FlowSession) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        subFlow(SyncKeyMappingFlowHandler(otherSession))
-    }
-}
 

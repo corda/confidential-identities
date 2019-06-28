@@ -1,18 +1,12 @@
 package net.corda.confidential.identities
 
-import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.OwnershipClaim
-import net.corda.core.crypto.SignedData
-import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.FlowSession
-import net.corda.core.flows.InitiatedBy
-import net.corda.core.flows.InitiatingFlow
+import com.r3.corda.lib.ci.ShareKeyInitiator
+import com.r3.corda.lib.ci.ShareKeyResponder
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
-import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
@@ -74,19 +68,4 @@ class ShareKeyFlowTests {
 
 }
 
-@InitiatingFlow
-private class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-            subFlow(ShareKeyFlow(initiateFlow(otherParty), uuid))
-        }
-    }
-
-@InitiatedBy(ShareKeyInitiator::class)
-private class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
-    @Suspendable
-    override fun call() : SignedData<OwnershipClaim> {
-        return subFlow(ShareKeyFlowHandler(otherSession))
-    }
-}
 
