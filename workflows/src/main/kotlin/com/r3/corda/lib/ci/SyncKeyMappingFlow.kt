@@ -13,6 +13,14 @@ import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 
+/**
+ * This flow allows a node to share the [PublicKey] to [Party] mapping data of parties unknown parties present in a given
+ * transaction. The initiating node sends a list of confidential identities to the counter-party who attempts to resolve
+ * them. Parties that cannot be resolved are returned to the initiating node.
+ *
+ * The counter-party will request a new key mapping for each of the unresolved identities by calling [RequestKeyFlow] as
+ * an inline flow.
+ */
 class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireTransaction) : FlowLogic<Unit>() {
 
     companion object {

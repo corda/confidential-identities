@@ -1,6 +1,7 @@
 package com.r3.corda.lib.ci
 
 import net.corda.core.CordaInternal
+import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SignedData
 import net.corda.core.crypto.newSecureRandom
 import net.corda.core.identity.AnonymousParty
@@ -17,7 +18,13 @@ import java.security.PublicKey
 import java.security.SignatureException
 import java.util.*
 
-
+/**
+ * Generates and returns a signed [OwnershipClaim] which contains data on the newly generated [PublicKey] to be associated
+ * with the provided external ID.
+ *
+ * @param serviceHub The [ServiceHub] of the node which requests a new public key
+ * @param uuid The external ID to be associated with the new [PublicKey]
+ */
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaim(serviceHub: ServiceHub, uuid: UUID): SignedData<OwnershipClaim> {
@@ -29,6 +36,12 @@ fun createSignedOwnershipClaim(serviceHub: ServiceHub, uuid: UUID): SignedData<O
     return SignedData(ownershipClaim.serialize(), sig)
 }
 
+/**
+ * Generates and returns a signed [OwnershipClaim] created against a known [PublicKey] that is provided to the method.
+ *
+ * @param serviceHub The [ServiceHub] of the node which requests a new public key
+ * @param knownKey The [PublicKey] to be mapped to the node party
+ */
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, knownKey: PublicKey): SignedData<OwnershipClaim> {
@@ -39,24 +52,26 @@ fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, knownKey: Pub
     return SignedData(ownershipClaim.serialize(), sig)
 }
 
+/**
+ * Verifies the [DigitalSignature.WithKey] on the [OwnershipClaim] matches the signature of the node that generated it.
+ */
 @CordaInternal
 @VisibleForTesting
 fun validateSignature(signedOwnershipClaim: SignedData<OwnershipClaim>) {
     try {
         signedOwnershipClaim.sig.verify(signedOwnershipClaim.raw.hash.bytes)
     } catch (ex: SignatureException) {
-        throw SignatureException("The signature does not match the expected.", ex)
+        throw SignatureException("The signature provided does not match that of identity that created signed ownership", ex)
     }
 }
 
-@CordaInternal
-@VisibleForTesting
-fun getPartyFromSignedOwnershipClaim(serviceHub: ServiceHub, signedOwnershipClaim: SignedData<OwnershipClaim>): Party? {
-    return serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.raw.deserialize().key))
-}
-
 /**
- * Utility object used to parse data required for generating key mappings between different flow sessions.
+ * Object that holds parameters that drive the behaviour of flows that consume it. The [UUID] can be provided to generate a
+ * new [PublicKey] to be associated with the external ID. A known [PublicKey] can be provided to instruct the node to register
+ * a mapping between that public key and the node party.
+ *
+ * @param _uuid The external ID for a new key to be mapped to
+ * @param knownKey The [PublicKey] to be mapped to the node party
  */
 @CordaSerializable
 class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
@@ -68,8 +83,11 @@ class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
 }
 
 /**
- * To be used in conjuction with [SignedData] when using confidential identities. The [PublicKey] represents the owning key of a
+ * To be used in conjunction with [SignedData] when using confidential identities. The [PublicKey] represents the owning key of a
  * confidential identity.
+ *
+ * @param nonce Arbitrary unique number
+ * @param key The [PublicKey] to be actioned
  */
 @CordaSerializable
 data class OwnershipClaim(val nonce: OpaqueBytes, val key: PublicKey)

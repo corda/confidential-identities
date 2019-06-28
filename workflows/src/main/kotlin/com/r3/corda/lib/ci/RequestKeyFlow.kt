@@ -14,6 +14,15 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 import java.util.*
 
+/**
+ * This flow registers a mapping in the [net.corda.core.node.services.IdentityService] between a [PublicKey] and a [Party]. It can generate a new key
+ * pair for a given [UUID] and register the new key mapping, or a known [PublicKey] can be supplied to the flow which will register
+ * a mapping between this key and the requesting party.
+ *
+ * The generation of the signed [OwnershipClaim] is delegated to the counter-party that sends the signed mapping back to
+ * the requesting node. The requesting node verifies the signature of the signed mapping matches that of the counter-party
+ * before registering the mapping in the [net.corda.core.node.services.IdentityService].
+ */
 class RequestKeyFlow(
         private val session: FlowSession,
         private val uuid: UUID,
@@ -42,7 +51,7 @@ class RequestKeyFlow(
         }
         val signedOwnershipClaim = session.sendAndReceive<SignedData<OwnershipClaim>>(accountData).unwrap { it }
 
-        // Ensure the counter party was the one that generated the key
+        // Ensure the counter party was the one that generated the ownership claim
         require(session.counterparty.owningKey == signedOwnershipClaim.sig.by) {
             "Expected a signature by ${session.counterparty.owningKey.toBase58String()}, but received by ${signedOwnershipClaim.sig.by.toBase58String()}}"
         }

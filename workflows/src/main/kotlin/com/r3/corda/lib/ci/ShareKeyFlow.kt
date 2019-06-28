@@ -15,7 +15,14 @@ import com.r3.corda.lib.ci.createSignedOwnershipClaim
 import com.r3.corda.lib.ci.validateSignature
 import java.util.*
 
-class ShareKeyFlow(private val session: FlowSession, private val uuid: UUID) : FlowLogic<Unit>() {
+/**
+ * This flow is the inverse of [RequestKeyFlow] in that the initiating node generates the signed [OwnershipClaim] and
+ * shares it with the counter-party node who must verify the signature before registering a mapping between the new
+ * [PublicKey] and the party that generated it.
+ */
+class ShareKeyFlow(
+        private val session: FlowSession,
+        private val uuid: UUID) : FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
