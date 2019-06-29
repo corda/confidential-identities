@@ -96,6 +96,24 @@ class SyncKeyMappingFlowTests {
         }
         assertEquals(expected, actual)
     }
+
+    @Test
+    fun `sync identities without a transaction` (){
+        val anonymousAlice = AnonymousParty(aliceNode.services.startFlow(ConfidentialIdentityInitiator(alice)).resultFuture.getOrThrow().owningKey)
+        val anonymousCharlie = AnonymousParty(aliceNode.services.startFlow(ConfidentialIdentityInitiator(charlie)).resultFuture.getOrThrow().owningKey)
+
+        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousAlice) })
+        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousCharlie) })
+
+        // Run the flow to sync up the identities
+        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, listOf(anonymousAlice, anonymousCharlie))).let {
+            mockNet.waitQuiescent()
+            it.resultFuture.getOrThrow()
+        }
+
+        assertEquals(alice, bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousAlice))
+        assertEquals(charlie, bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousCharlie))
+    }
 }
 
 

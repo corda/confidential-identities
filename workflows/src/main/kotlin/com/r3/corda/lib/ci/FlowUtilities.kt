@@ -9,6 +9,7 @@ import net.corda.confidential.identities.SyncKeyMappingFlow
 import net.corda.confidential.identities.SyncKeyMappingFlowHandler
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.transactions.WireTransaction
@@ -24,7 +25,7 @@ class ConfidentialIdentityInitiator(private val party: Party) : FlowLogic<PartyA
 }
 
 @InitiatedBy(ConfidentialIdentityInitiator::class)
-class ConfidentialIdentityResponder(private val otherSession: FlowSession): FlowLogic<Unit>() {
+class ConfidentialIdentityResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         subFlow(RequestConfidentialIdentityFlowHandler(otherSession))
@@ -34,12 +35,12 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession): Flow
 
 @InitiatingFlow
 class RequestKeyInitiator(
-    private val otherParty: Party,
-    private val uuid: UUID?,
-    private val key: PublicKey?): FlowLogic<SignedData<OwnershipClaim>?>() {
+        private val otherParty: Party,
+        private val uuid: UUID?,
+        private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>?>() {
 
-    constructor(otherParty: Party, uuid: UUID): this(otherParty, uuid, null)
-    constructor(otherParty: Party, key: PublicKey): this(otherParty, null, key)
+    constructor(otherParty: Party, uuid: UUID) : this(otherParty, uuid, null)
+    constructor(otherParty: Party, key: PublicKey) : this(otherParty, null, key)
 
     @Suspendable
     override fun call(): SignedData<OwnershipClaim>? {
@@ -71,17 +72,26 @@ class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) :
 @InitiatedBy(ShareKeyInitiator::class)
 class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
     @Suspendable
-    override fun call() : SignedData<OwnershipClaim> {
+    override fun call(): SignedData<OwnershipClaim> {
         return subFlow(ShareKeyFlowHandler(otherSession))
     }
 }
 
 
 @InitiatingFlow
-class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Unit>() {
+class SyncKeyMappingInitiator(
+        private val otherParty: Party,
+        private val tx: WireTransaction?,
+        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+    constructor(otherParty: Party, tx: WireTransaction) : this(otherParty, tx, null)
+    constructor(otherParty: Party, identitiesToSync: List<AbstractParty>) : this(otherParty, null, identitiesToSync)
+
     @Suspendable
     override fun call() {
-        subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+        when {
+            tx != null -> subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+            identitiesToSync != null -> subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync))
+        }
     }
 }
 

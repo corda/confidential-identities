@@ -2,13 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9e44c06e-0e5a-4325-a48b-4668774bbbad" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/4.10.3/fileHashes/fileHashes.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyFlow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyFlow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ShareKeyFlow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ShareKeyFlow.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SignedKeyUtilities.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SignedKeyUtilities.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt" beforeDir="false" afterPath="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/classes/" />
     <ignored path="$PROJECT_DIR$/.gradle/" />
@@ -73,18 +70,9 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyFlow.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="66">
-              <caret line="19" column="55" selection-start-line="19" selection-start-column="55" selection-end-line="19" selection-end-column="55" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ShareKeyFlow.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-563">
+            <state relative-caret-position="106">
               <caret line="20" column="47" selection-start-line="20" selection-start-column="47" selection-end-line="20" selection-end-column="47" />
               <folding>
                 <element signature="e#43#636#0" expanded="true" />
@@ -96,26 +84,35 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="114">
-              <caret line="21" column="19" selection-start-line="21" selection-start-column="19" selection-end-line="21" selection-end-column="19" />
+            <state relative-caret-position="165">
+              <caret line="22" column="2" lean-forward="true" selection-start-line="22" selection-start-column="2" selection-end-line="22" selection-end-column="2" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node/5.0-SNAPSHOT-WILLH/corda-node-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/node/services/identity/PersistentIdentityService.kt">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node/5.0-SNAPSHOT-WILLH/corda-node-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/node/services/statemachine/FlowStateMachineImpl.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="301">
-              <caret line="259" selection-start-line="259" selection-end-line="259" />
+            <state relative-caret-position="151">
+              <caret line="305" selection-start-line="305" selection-end-line="305" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.eclipse.jetty/jetty-security/9.4.18.v20190429/344649fb61358872fc4e6ff84053f8965366815/jetty-security-9.4.18.v20190429-sources.jar!/org/eclipse/jetty/security/IdentityService.java">
+        <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-core/5.0-SNAPSHOT-WILLH/corda-core-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/core/flows/FlowLogic.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="135">
-              <caret line="29" column="28" selection-start-line="29" selection-start-column="28" selection-end-line="29" selection-end-column="28" />
+            <state relative-caret-position="163">
+              <caret line="328" selection-start-line="328" selection-end-line="328" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="276">
+              <caret line="108" column="56" lean-forward="true" selection-start-line="108" selection-start-column="56" selection-end-line="108" selection-end-column="56" />
             </state>
           </provider>
         </entry>
@@ -123,8 +120,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/build.gradle">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="220">
-              <caret line="114" lean-forward="true" selection-start-line="114" selection-end-line="114" />
+            <state relative-caret-position="225">
+              <caret line="15" column="35" selection-start-line="15" selection-start-column="35" selection-end-line="15" selection-end-column="35" />
             </state>
           </provider>
         </entry>
@@ -132,17 +129,26 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="111">
-              <caret line="61" lean-forward="true" selection-start-line="61" selection-end-line="61" />
+            <state relative-caret-position="261">
+              <caret line="91" column="47" lean-forward="true" selection-start-line="91" selection-start-column="47" selection-end-line="91" selection-end-column="47" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/ShareKeyFlowTests.kt">
+        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/RequestConfidentialIdentityFlow.kt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="120">
+              <caret line="12" column="36" lean-forward="true" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/ConfidentialIdentityUtilities.kt">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="184">
-              <caret line="65" column="26" lean-forward="true" selection-start-line="65" selection-start-column="26" selection-end-line="65" selection-end-column="26" />
+              <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
             </state>
           </provider>
         </entry>
@@ -206,21 +212,21 @@
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ConfidentialIdentityWrapper.kt" />
         <option value="$PROJECT_DIR$/build.gradle" />
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyInitiator.kt" />
-        <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt" />
         <option value="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/ShareKeyFlowTests.kt" />
-        <option value="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt" />
         <option value="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/RequestKeyFlowTests.kt" />
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SignedKeyUtilities.kt" />
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyFlow.kt" />
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ShareKeyFlow.kt" />
+        <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt" />
+        <option value="$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt" />
         <option value="$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds">
     <option name="y" value="23" />
     <option name="width" value="1680" />
-    <option name="height" value="484" />
+    <option name="height" value="968" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -242,61 +248,7 @@
             <path>
               <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
               <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="kotlin" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="kotlin" type="462c0819:PsiDirectoryNode" />
-              <item name="ci" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="kotlin" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="confidential-identities" type="b2602c69:ProjectViewProjectNode" />
-              <item name="confidential-identities" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="workflows" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="test" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="kotlin" type="462c0819:PsiDirectoryNode" />
-              <item name="ci" type="462c0819:PsiDirectoryNode" />
+              <item name=".idea" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -339,27 +291,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.Tests in 'com.r3.corda.lib.ci'">
-    <configuration name="ShareKeyFlowTests" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="--tests &quot;net.corda.confidential.identities.ShareKeyFlowTests&quot;" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":workflows:cleanTest" />
-            <option value=":workflows:test" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <GradleScriptDebugEnabled>false</GradleScriptDebugEnabled>
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Gradle.SyncKeyMappingFlowTests.sync identities without a transaction">
     <configuration name="ShareKeyFlowTests.share new key with another party " type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -386,6 +318,26 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="externalSystemIdString" value="GRADLE" />
         <option name="scriptParameters" value="--tests &quot;net.corda.confidential.identities.SyncKeyMappingFlowTests&quot;" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":workflows:cleanTest" />
+            <option value=":workflows:test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <GradleScriptDebugEnabled>false</GradleScriptDebugEnabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="SyncKeyMappingFlowTests.sync identities without a transaction" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="--tests &quot;net.corda.confidential.identities.SyncKeyMappingFlowTests.sync identities without a transaction&quot;" />
         <option name="taskDescriptions">
           <list />
         </option>
@@ -449,11 +401,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.Tests in 'com.r3.corda.lib.ci'" />
+        <item itemvalue="Gradle.SyncKeyMappingFlowTests.sync identities without a transaction" />
         <item itemvalue="Gradle.SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" />
+        <item itemvalue="Gradle.Tests in 'com.r3.corda.lib.ci'" />
         <item itemvalue="Gradle.SyncKeyMappingFlowTests" />
         <item itemvalue="Gradle.ShareKeyFlowTests.share new key with another party " />
-        <item itemvalue="Gradle.ShareKeyFlowTests" />
       </list>
     </recent_temporary>
   </component>
@@ -481,32 +433,11 @@
       <workItem from="1561566177343" duration="14867000" />
       <workItem from="1561715621026" duration="5406000" />
       <workItem from="1561736761956" duration="218000" />
-      <workItem from="1561737008156" duration="2544000" />
+      <workItem from="1561737008156" duration="6040000" />
     </task>
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 05m 35s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 06m 14s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 08m 30s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 11m 53s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 13m 33s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 15m 56s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
-    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 18m 40s.xml">
-      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
-    </history-entry>
     <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.27 at 12h 19m 24s.xml">
       <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
     </history-entry>
@@ -516,12 +447,33 @@
     <history-entry file="Tests_in_'com_r3_corda_lib_ci' - 2019.06.28 at 15h 01m 02s.xml">
       <configuration name="Tests in 'com.r3.corda.lib.ci'" configurationId="GradleRunConfiguration" />
     </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.29 at 12h 01m 30s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.29 at 12h 02m 27s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.29 at 12h 03m 38s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.29 at 12h 04m 45s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_the_key_mapping_between_two_parties_in_a_transaction - 2019.06.29 at 12h 05m 18s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync the key mapping between two parties in a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_identities_without_a_transaction - 2019.06.29 at 12h 16m 37s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync identities without a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
+    <history-entry file="SyncKeyMappingFlowTests_sync_identities_without_a_transaction - 2019.06.29 at 12h 19m 59s.xml">
+      <configuration name="SyncKeyMappingFlowTests.sync identities without a transaction" configurationId="GradleRunConfiguration" />
+    </history-entry>
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="79065000" />
+    <option name="totallyTimeSpent" value="82561000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1680" height="484" extended-state="0" />
+    <frame x="0" y="23" width="1680" height="968" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2747253" />
@@ -533,15 +485,15 @@
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info id="Web" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info active="true" anchor="bottom" id="Find" order="1" visible="true" weight="0.32908162" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.340935" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.41163057" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32908162" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.34018266" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.41095892" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
       <window_info anchor="bottom" id="Build" order="7" weight="0.3296582" />
       <window_info anchor="bottom" id="Spring" order="8" />
-      <window_info anchor="bottom" id="Terminal" order="9" weight="0.061573546" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.413242" />
       <window_info anchor="bottom" id="Docker" order="10" show_stripe_button="false" />
       <window_info anchor="bottom" id="Event Log" order="11" side_tool="true" />
       <window_info anchor="bottom" id="Java Enterprise" order="12" />
@@ -662,6 +614,12 @@
           <properties />
           <option name="timeStamp" value="50" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="kotlin-line">
+          <url>file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt</url>
+          <line>50</line>
+          <properties />
+          <option name="timeStamp" value="55" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
@@ -771,25 +729,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/ConfidentialIdentityUtilities.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="156">
-          <caret line="33" column="20" selection-start-line="33" selection-start-column="20" selection-end-line="33" selection-end-column="20" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/RequestConfidentialIdentityFlow.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="15" column="1" lean-forward="true" selection-start-line="15" selection-start-column="1" selection-end-line="15" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-838" />
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node-driver/5.0-SNAPSHOT-WILLH/corda-node-driver-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/testing/node/internal/InternalTestUtils.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="233">
@@ -825,20 +764,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-core/5.0-SNAPSHOT-WILLH/corda-core-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/core/flows/FlowLogic.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="163">
-          <caret line="328" selection-start-line="328" selection-end-line="328" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node/5.0-SNAPSHOT-WILLH/corda-node-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/node/services/statemachine/FlowStateMachineImpl.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4020">
-          <caret line="305" selection-start-line="305" selection-end-line="305" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.10/859c7790c5378fcebbc22bdb25eb8346fa96ec68/quasar-core-0.7.10-sources.jar!/co/paralleluniverse/fibers/Fiber.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="7815">
@@ -848,13 +773,6 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ConfidentialIdentityWrapper.kt" />
     <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyInitiator.kt" />
-    <entry file="file://$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1125">
-          <caret line="101" selection-start-line="101" selection-end-line="101" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-confidential-identities/5.0-SNAPSHOT-WILLH/corda-confidential-identities-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/confidential/IdentitySyncFlow.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="690">
@@ -945,13 +863,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SignedKeyUtilities.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="42">
-          <caret line="20" column="3" selection-start-line="20" selection-start-column="3" selection-end-line="20" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node/5.0-SNAPSHOT-WILLH/corda-node-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/node/services/identity/PersistentIdentityService.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="301">
@@ -963,13 +874,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="195">
           <caret line="22" column="18" selection-start-line="22" selection-start-column="10" selection-end-line="22" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="111">
-          <caret line="61" lean-forward="true" selection-start-line="61" selection-end-line="61" />
         </state>
       </provider>
     </entry>
@@ -994,13 +898,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="220">
-          <caret line="114" lean-forward="true" selection-start-line="114" selection-end-line="114" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/RequestKeyFlow.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="66">
@@ -1008,9 +905,30 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SignedKeyUtilities.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="42">
+          <caret line="20" column="3" selection-start-line="20" selection-start-column="3" selection-end-line="20" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="10" column="7" lean-forward="true" selection-start-line="10" selection-start-column="7" selection-end-line="10" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="225">
+          <caret line="15" column="35" selection-start-line="15" selection-start-column="35" selection-end-line="15" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/ShareKeyFlow.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-563">
+        <state relative-caret-position="106">
           <caret line="20" column="47" selection-start-line="20" selection-start-column="47" selection-end-line="20" selection-end-column="47" />
           <folding>
             <element signature="e#43#636#0" expanded="true" />
@@ -1018,10 +936,52 @@
         </state>
       </provider>
     </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/ConfidentialIdentityUtilities.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="39" column="13" selection-start-line="39" selection-start-column="13" selection-end-line="39" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.r3.corda.lib.tokens/tokens-workflows/1.0-RC03/39e3f11d7376d7198fdd4793218b0735aaf3b28f/tokens-workflows-1.0-RC03-sources.jar!/com/r3/corda/lib/tokens/workflows/flows/internal/confidential/RequestConfidentialIdentityFlow.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="12" column="36" lean-forward="true" selection-start-line="12" selection-start-column="36" selection-end-line="12" selection-end-column="36" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-core/5.0-SNAPSHOT-WILLH/corda-core-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/core/flows/FlowLogic.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="163">
+          <caret line="328" selection-start-line="328" selection-end-line="328" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$MAVEN_REPOSITORY$/net/corda/corda-node/5.0-SNAPSHOT-WILLH/corda-node-5.0-SNAPSHOT-WILLH-sources.jar!/net/corda/node/services/statemachine/FlowStateMachineImpl.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="151">
+          <caret line="305" selection-start-line="305" selection-end-line="305" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/workflows/src/test/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlowTests.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="276">
+          <caret line="108" column="56" lean-forward="true" selection-start-line="108" selection-start-column="56" selection-end-line="108" selection-end-column="56" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/FlowUtilities.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="261">
+          <caret line="91" column="47" lean-forward="true" selection-start-line="91" selection-start-column="47" selection-end-line="91" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/workflows/src/main/kotlin/com/r3/corda/lib/ci/SyncKeyMappingFlow.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="114">
-          <caret line="21" column="19" selection-start-line="21" selection-start-column="19" selection-end-line="21" selection-end-column="19" />
+        <state relative-caret-position="165">
+          <caret line="22" column="2" lean-forward="true" selection-start-line="22" selection-start-column="2" selection-end-line="22" selection-end-column="2" />
         </state>
       </provider>
     </entry>

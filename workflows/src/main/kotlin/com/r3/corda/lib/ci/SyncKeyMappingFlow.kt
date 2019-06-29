@@ -14,14 +14,22 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 
 /**
- * This flow allows a node to share the [PublicKey] to [Party] mapping data of parties unknown parties present in a given
- * transaction. The initiating node sends a list of confidential identities to the counter-party who attempts to resolve
- * them. Parties that cannot be resolved are returned to the initiating node.
+ * This flow allows a node to share the [PublicKey] to [Party] mapping data of parties unknown to the counter-party. The
+ * two constructors allow the the node to provide a transaction in which the confidential identities unknown to the counter-party
+ * will be extracted and then registered in the identity service. Alternatively, the node can provide the confidential identities
+ * it wishes to share with the counter-party directly. The initiating node sends a list of confidential identities to the
+ * counter-party who attempts to resolve them. Parties that cannot be resolved are returned to the initiating node who then
+ * resolves them and sends the identity back to be registered. .
  *
  * The counter-party will request a new key mapping for each of the unresolved identities by calling [RequestKeyFlow] as
  * an inline flow.
  */
-class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireTransaction) : FlowLogic<Unit>() {
+class SyncKeyMappingFlow(
+        private val session: FlowSession,
+        private val tx: WireTransaction?,
+        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+    constructor(session: FlowSession, tx: WireTransaction) : this(session, tx, null)
+    constructor(session: FlowSession, identitiesToSync: List<AbstractParty>) : this(session, null, identitiesToSync)
 
     companion object {
         object SYNCING_KEY_MAPPINGS : ProgressTracker.Step("Syncing key mappings.")
@@ -33,12 +41,22 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
     @Suspendable
     override fun call() {
         progressTracker.currentStep = SYNCING_KEY_MAPPINGS
-        val confidentialIdentities = extractConfidentialIdentities()
+        val confidentialIdentities = mutableListOf<AbstractParty>()
+        if (tx != null) {
+            val ci = extractConfidentialIdentities()
+            ci.forEach {
+                confidentialIdentities.add(it)
+            }
+        } else {
+            identitiesToSync?.forEach {
+                confidentialIdentities.add(it)
+            }
+        }
 
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
             require(req.all { it in confidentialIdentities }) {
-                "${session.counterparty} requested a confidential identity not part of transaction: ${tx.id}"
+                "${session.counterparty} requested a confidential identity not part of transaction: ${tx?.id}"
             }
             req
         }
@@ -48,6 +66,8 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
     }
 
     private fun extractConfidentialIdentities(): List<AbstractParty> {
+        tx
+                ?: throw IllegalArgumentException("A transaction must be provided if you wish to extract the confidential identities from it.")
         val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
             try {
                 serviceHub.loadState(it).data
@@ -70,8 +90,10 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         object RECEIVING_PARTIES : ProgressTracker.Step("Receiving potential party objects for unknown identities.")
         object NO_PARTIES_RECEIVED : ProgressTracker.Step("None of the requested unknown parties were resolved by the counter party. " +
                 "Terminating the flow early.")
+
         object REQUESTING_PROOF_OF_ID : ProgressTracker.Step("Requesting a signed key to party mapping for the received parties to verify" +
                 "the authenticity of the party.")
+
         object IDENTITIES_SYNCHRONISED : ProgressTracker.Step("Identities have finished synchronising.")
     }
 
