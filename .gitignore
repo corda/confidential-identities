@@ -10,6 +10,8 @@ tags
 
 # General build files
 workflows/build/*
+workflows/logs/*
+workflow/out/*
 !docs/build/*
 
 lib/dokka.jar
