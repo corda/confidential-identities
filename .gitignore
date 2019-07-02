@@ -8,10 +8,8 @@ tags
 *.log.gz
 *.orig
 
-.gradle
-
 # General build files
-**/build/*
+workflows/build/*
 !docs/build/*
 
 lib/dokka.jar
@@ -49,7 +47,8 @@ lib/dokka.jar
 .idea/uiDesigner.xml
 
 # Gradle:
-.idea/libraries
+.idea/*
+.gradle/*
 
 # Mongo Explorer plugin:
 .idea/mongoSettings.xml
