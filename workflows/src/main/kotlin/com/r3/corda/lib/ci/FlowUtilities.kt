@@ -34,7 +34,8 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession) : Flo
 }
 
 @InitiatingFlow
-class RequestKeyInitiator(
+class RequestKeyInitiator
+private constructor(
         private val otherParty: Party,
         private val uuid: UUID?,
         private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>?>() {
@@ -79,7 +80,8 @@ class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<Signe
 
 
 @InitiatingFlow
-class SyncKeyMappingInitiator(
+class SyncKeyMappingInitiator
+private constructor(
         private val otherParty: Party,
         private val tx: WireTransaction?,
         private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {

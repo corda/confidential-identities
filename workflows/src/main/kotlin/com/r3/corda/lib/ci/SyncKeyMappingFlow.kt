@@ -14,7 +14,7 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 
 /**
- * This flow allows a node to share the [PublicKey] to [Party] mapping data of parties unknown to the counter-party. The
+ * This flow allows the node to share the [PublicKey] to [Party] mapping data of parties unknown to the counter-party. The
  * two constructors allow the the node to provide a transaction in which the confidential identities unknown to the counter-party
  * will be extracted and then registered in the identity service. Alternatively, the node can provide the confidential identities
  * it wishes to share with the counter-party directly. The initiating node sends the list of identities to the counter-party who
@@ -23,7 +23,8 @@ import java.security.PublicKey
  * The counter-party will request a new key mapping for each of the unresolved identities by calling [RequestKeyFlow] as
  * an inline flow.
  */
-class SyncKeyMappingFlow(
+class SyncKeyMappingFlow
+private constructor(
         private val session: FlowSession,
         private val tx: WireTransaction?,
         private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
@@ -42,7 +43,7 @@ class SyncKeyMappingFlow(
         progressTracker.currentStep = SYNCING_KEY_MAPPINGS
         val confidentialIdentities = mutableListOf<AbstractParty>()
         if (tx != null) {
-            val ci = extractConfidentialIdentities()
+            val ci = extractConfidentialIdentities(tx)
             ci.forEach {
                 confidentialIdentities.add(it)
             }
@@ -55,7 +56,7 @@ class SyncKeyMappingFlow(
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
             require(req.all { it in confidentialIdentities }) {
-                "${session.counterparty} requested a confidential identity not part of transaction: ${tx?.id}"
+                "${session.counterparty} requested a confidential identities are not a subset of the identities initially provided."
             }
             req
         }
@@ -64,10 +65,8 @@ class SyncKeyMappingFlow(
         session.send(resolvedIds)
     }
 
-    private fun extractConfidentialIdentities(): List<AbstractParty> {
-        tx
-                ?: throw IllegalArgumentException("A transaction must be provided if you wish to extract the confidential identities from it.")
-        val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
+    private fun extractConfidentialIdentities(tx: WireTransaction): List<AbstractParty> {
+            val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
             try {
                 serviceHub.loadState(it).data
             } catch (e: TransactionResolutionException) {
