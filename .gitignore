@@ -8,10 +8,10 @@ tags
 *.log.gz
 *.orig
 
-.gradle
-
 # General build files
-**/build/*
+workflows/build/*
+workflows/logs/*
+workflow/out/*
 !docs/build/*
 
 lib/dokka.jar
@@ -22,7 +22,7 @@ lib/dokka.jar
 *.iml
 
 ## Directory-based project format:
-.idea
+.idea/*
 
 # if you remove the above rule, at least ignore the following:
 
@@ -49,7 +49,7 @@ lib/dokka.jar
 .idea/uiDesigner.xml
 
 # Gradle:
-.idea/libraries
+.gradle/*
 
 # Mongo Explorer plugin:
 .idea/mongoSettings.xml
