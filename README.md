@@ -79,6 +79,6 @@ the flow counterparty who then registers `PublicKey` to `CordaX500Name` in their
 #### SyncKeyMappingsFlow
 
 This flow should be used when a node wishes to synchronise the `PublicKey` to `CordaX500Name` mapping of a confidential 
-identity with another node. This information can be extracted from a given `WireTransaction` if this is passed as a 
-parameter to the flow. Alternatively, the node can pass a list of `AnonymousParty` to the flow as a parameter bypassing 
-need for a transaction. 
+identity with another node. This confidential participants of a transaction can be extracted from a given `WireTransaction` 
+if this is passed as a parameter to the flow. Alternatively, the node can bypass the need for a transaction and accept a
+list of `AnonymousParty` that it wishes to synchronize with another node. 
