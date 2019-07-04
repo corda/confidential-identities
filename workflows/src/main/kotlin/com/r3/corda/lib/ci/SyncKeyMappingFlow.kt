@@ -56,7 +56,7 @@ private constructor(
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
             require(req.all { it in confidentialIdentities }) {
-                "${session.counterparty} requested a confidential identities are not a subset of the identities initially provided."
+                "${session.counterparty} requested resolution of a confidential identity that is not present in the list of identities initially provided."
             }
             req
         }
@@ -66,7 +66,7 @@ private constructor(
     }
 
     private fun extractConfidentialIdentities(tx: WireTransaction): List<AbstractParty> {
-            val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
+        val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
             try {
                 serviceHub.loadState(it).data
             } catch (e: TransactionResolutionException) {
