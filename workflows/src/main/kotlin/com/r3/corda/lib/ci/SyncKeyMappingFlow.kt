@@ -64,7 +64,7 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
     }
 }
 
-class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLogic<Boolean>() {
+class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     companion object {
         object RECEIVING_IDENTITIES : ProgressTracker.Step("Receiving confidential identities.")
         object RECEIVING_PARTIES : ProgressTracker.Step("Receiving potential party objects for unknown identities.")
@@ -78,7 +78,7 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
     override val progressTracker: ProgressTracker = ProgressTracker(RECEIVING_IDENTITIES, RECEIVING_PARTIES, NO_PARTIES_RECEIVED, REQUESTING_PROOF_OF_ID, IDENTITIES_SYNCHRONISED)
 
     @Suspendable
-    override fun call(): Boolean {
+    override fun call() {
         progressTracker.currentStep = RECEIVING_IDENTITIES
         val allConfidentialIds = otherSession.receive<List<AbstractParty>>().unwrap { it }
         val unknownIdentities = allConfidentialIds.filter { serviceHub.identityService.wellKnownPartyFromAnonymous(it) == null }
@@ -88,7 +88,6 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         val parties = otherSession.receive<List<Party>>().unwrap { it }
         if (parties.isEmpty()) {
             progressTracker.currentStep = NO_PARTIES_RECEIVED
-            return false
         }
         val mapConfidentialKeyToParty: Map<PublicKey, Party> = unknownIdentities.map { it.owningKey }.zip(parties).toMap()
 
@@ -100,6 +99,5 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
             subFlow(RequestKeyInitiator(it.value, it.key))
         }
         progressTracker.currentStep = IDENTITIES_SYNCHRONISED
-        return true
     }
 }

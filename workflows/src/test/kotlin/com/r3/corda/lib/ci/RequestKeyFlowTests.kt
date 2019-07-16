@@ -6,7 +6,7 @@ import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
-import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
+import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
@@ -88,7 +88,7 @@ class RequestKeyFlowTests {
         // Charlie issues then pays some cash to a new confidential identity
         val anonymousParty = charlieNode.services.startFlow(ConfidentialIdentityInitiator(alice)).resultFuture.getOrThrow()
         val issueFlow = charlieNode.services.startFlow(
-                IssueTokens(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey))
+                IssueTokens(listOf(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey)))
         )
         val issueTx = issueFlow.resultFuture.getOrThrow()
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder

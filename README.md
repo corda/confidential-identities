@@ -36,18 +36,18 @@ Second, you must add the tokens development artifactory repository to the
 list of repositories for your project:
 
     repositories {
-        maven { url 'xxx' }
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
     }
 
 Now, you can add the confidential identities dependencies to the `dependencies` block
 in each module of your CorDapp. In your workflow `build.gradle` add:
 
-    cordaCompile "confidential_id_release_group:workflows:$confidential_id_release_version"
+    cordaCompile "$confidential_id_release_group:workflows:$confidential_id_release_version"
 
 If you want to use the `deployNodes` task, you will need to add the
 following dependency to your root `build.gradle` file:
 
-    cordapp "confidential_id_release_group:workflows:$confidential_id_release_version"
+    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
 
 These should also be added to the `deployNodes` task with the following syntax:
 
@@ -55,7 +55,7 @@ These should also be added to the `deployNodes` task with the following syntax:
         projectCordapp {
             deploy = false
         }
-        cordapp("$confidential_id_release_group:workflows:$confidential_id_release_version")
+        cordapp("$confidential_id_release_group:ci-workflows:$confidential_id_release_version")
     }
 
 ## Flows 
