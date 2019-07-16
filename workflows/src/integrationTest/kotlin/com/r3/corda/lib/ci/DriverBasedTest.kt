@@ -4,11 +4,8 @@ import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
-import com.r3.corda.lib.tokens.money.USD
-import com.r3.corda.lib.tokens.workflows.flows.shell.ConfidentialIssueTokens
-import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
+import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
 import net.corda.client.rpc.CordaRPCClient
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
