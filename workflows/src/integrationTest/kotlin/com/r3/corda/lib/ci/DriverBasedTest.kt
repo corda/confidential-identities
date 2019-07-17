@@ -25,7 +25,7 @@ import kotlin.test.assertEquals
 class DriverBasedTest {
 
     @Test
-    fun `for the love of god why don't you work`() = withDriver {
+    fun `WIP`() = withDriver {
         val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
         val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
         val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))

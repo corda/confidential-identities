@@ -11,10 +11,15 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.getOrThrow
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
+import net.corda.testing.node.MockNetwork
+import net.corda.testing.node.MockNetworkParameters
+import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.startFlow
@@ -22,16 +27,17 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mock
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class RequestKeyFlowTests {
 
-    private lateinit var mockNet: InternalMockNetwork
-    private lateinit var aliceNode: TestStartedNode
-    private lateinit var bobNode: TestStartedNode
-    private lateinit var charlieNode: TestStartedNode
+    private lateinit var mockNet: MockNetwork
+    private lateinit var aliceNode: StartedMockNode
+    private lateinit var bobNode: StartedMockNode
+    private lateinit var charlieNode: StartedMockNode
     private lateinit var alice: Party
     private lateinit var bob: Party
     private lateinit var charlie: Party
@@ -39,14 +45,18 @@ class RequestKeyFlowTests {
 
     @Before
     fun before() {
-        mockNet = InternalMockNetwork(
-                cordappPackages = listOf(
-                        "com.r3.corda.lib.tokens.contracts",
-                        "com.r3.corda.lib.tokens.workflows",
-                        "com.r3.corda.lib.ci"),
-                networkSendManuallyPumped = false,
-                threadPerNode = true)
-
+            mockNet = MockNetwork(
+                MockNetworkParameters(
+                    networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                    cordappsForAllNodes = listOf(
+                            TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                            TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                            TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+                            TestCordapp.findCordapp("com.r3.corda.lib.ci")
+                    ),
+                    threadPerNode = true
+                )
+            )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         charlieNode = mockNet.createPartyNode(CHARLIE_NAME)
@@ -67,9 +77,10 @@ class RequestKeyFlowTests {
     @Test
     fun `request new key from another party`() {
         // Alice requests that bob generates a new key for an account
-        val keyForBob = aliceNode.services.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).resultFuture
-
-        val bobKey = keyForBob.getOrThrow()?.raw?.deserialize()?.key ?: throw IllegalArgumentException("")
+        val keyForBob = aliceNode.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).let{
+            it.getOrThrow()
+        }
+        val bobKey = keyForBob.raw.deserialize().key
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -86,20 +97,24 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = charlieNode.services.startFlow(ConfidentialIdentityInitiator(alice)).resultFuture.getOrThrow()
-        val issueFlow = charlieNode.services.startFlow(
+        val anonymousParty = charlieNode.startFlow(ConfidentialIdentityInitiator(alice)).let{
+            it.getOrThrow()
+        }
+
+        val issueTx = charlieNode.startFlow(
                 IssueTokens(listOf(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey)))
-        )
-        val issueTx = issueFlow.resultFuture.getOrThrow()
+        ).getOrThrow()
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
         // Verify Bob cannot resolve the CI before we create a signed mapping of the CI key
-        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-        bobNode.services.startFlow(RequestKeyInitiator(alice, confidentialIdentity.owningKey)).resultFuture.getOrThrow()
+        assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
+        bobNode.startFlow(RequestKeyInitiator(alice, confidentialIdentity.owningKey)).let {
+            it.getOrThrow()
+        }
 
-        val expected = charlieNode.database.transaction {
+        val expected = charlieNode.transaction {
             charlieNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
         }
-        val actual = bobNode.database.transaction {
+        val actual = bobNode.transaction {
             bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
         }
         assertEquals(expected, actual)

@@ -14,7 +14,7 @@ import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 
 /**
- * This flow allows a node to share the [PublicKey] to [Party] mapping data of parties unknown parties present in a given
+ * This flow allows a node to share the [PublicKey] to [Party] mapping data of unknown parties present in a given
  * transaction. The initiating node sends a list of confidential identities to the counter-party who attempts to resolve
  * them. Parties that cannot be resolved are returned to the initiating node.
  *
@@ -42,8 +42,7 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
             }
             req
         }
-
-        val resolvedIds = requestedIdentities.map { serviceHub.identityService.wellKnownPartyFromAnonymous(it) }.filter { it != null }
+        val resolvedIds = requestedIdentities.map { it.owningKey to serviceHub.identityService.wellKnownPartyFromAnonymous(it) }.toMap()
         session.send(resolvedIds)
     }
 
@@ -85,13 +84,10 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         otherSession.send(unknownIdentities)
         progressTracker.currentStep = RECEIVING_PARTIES
 
-        val parties = otherSession.receive<List<Party>>().unwrap { it }
-        if (parties.isEmpty()) {
+        val mapConfidentialKeyToParty = otherSession.receive<Map<PublicKey, Party>>().unwrap { it }
+        if (mapConfidentialKeyToParty.isEmpty()) {
             progressTracker.currentStep = NO_PARTIES_RECEIVED
         }
-        val mapConfidentialKeyToParty: Map<PublicKey, Party> = unknownIdentities.map { it.owningKey }.zip(parties).toMap()
-
-        require(mapConfidentialKeyToParty.size == parties.size)
 
         progressTracker.currentStep = REQUESTING_PROOF_OF_ID
 
