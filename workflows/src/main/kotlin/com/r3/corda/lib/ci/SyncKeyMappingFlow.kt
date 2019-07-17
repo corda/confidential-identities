@@ -39,16 +39,11 @@ private constructor(
     @Suspendable
     override fun call() {
         progressTracker.currentStep = SYNCING_KEY_MAPPINGS
-        val confidentialIdentities = mutableListOf<AbstractParty>()
+        val confidentialIdentities =
         if (tx != null) {
-            val ci = extractConfidentialIdentities(tx)
-            ci.forEach {
-                confidentialIdentities.add(it)
-            }
+            extractConfidentialIdentities(tx)
         } else {
-            identitiesToSync?.forEach {
-                confidentialIdentities.add(it)
-            }
+            identitiesToSync?: throw IllegalArgumentException("A transaction or a list of anonymous parties must be provided to this flow.")
         }
 
         // Send confidential identities to the counter party and return a list of parties they wish to resolve

@@ -9,6 +9,7 @@ import net.corda.confidential.identities.SyncKeyMappingFlow
 import net.corda.confidential.identities.SyncKeyMappingFlowHandler
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.transactions.WireTransaction
@@ -49,7 +50,6 @@ class RequestKeyInitiator(
             subFlow(RequestKeyFlow(initiateFlow(otherParty), key ?: throw IllegalArgumentException("You must specify" +
                     "the identifier or a known public key")))
         }
-        return null
     }
 }
 
@@ -89,9 +89,11 @@ private constructor(
 
     @Suspendable
     override fun call() {
-        when {
-            tx != null -> subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
-            identitiesToSync != null -> subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync))
+        if (tx != null ) {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+        } else {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync ?:
+                throw IllegalArgumentException("")))
         }
     }
 }
