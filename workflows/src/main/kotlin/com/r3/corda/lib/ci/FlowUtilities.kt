@@ -1,15 +1,14 @@
 package com.r3.corda.lib.ci
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.tokens.workflows.flows.internal.confidential.RequestConfidentialIdentityFlow
-import com.r3.corda.lib.tokens.workflows.flows.internal.confidential.RequestConfidentialIdentityFlowHandler
+import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlow
+import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlowHandler
 import net.corda.confidential.identities.ShareKeyFlow
 import net.corda.confidential.identities.ShareKeyFlowHandler
 import net.corda.confidential.identities.SyncKeyMappingFlow
 import net.corda.confidential.identities.SyncKeyMappingFlowHandler
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
-import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.transactions.WireTransaction
@@ -34,21 +33,21 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession) : Flo
 }
 
 @InitiatingFlow
-class RequestKeyInitiator
-private constructor(
+class RequestKeyInitiator(
         private val otherParty: Party,
         private val uuid: UUID?,
-        private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>?>() {
+        private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>>() {
 
     constructor(otherParty: Party, uuid: UUID) : this(otherParty, uuid, null)
     constructor(otherParty: Party, key: PublicKey) : this(otherParty, null, key)
 
     @Suspendable
-    override fun call(): SignedData<OwnershipClaim>? {
-        when {
-            uuid != null -> return subFlow(RequestKeyFlow(initiateFlow(otherParty), uuid))
-            key != null -> return subFlow(RequestKeyFlow(initiateFlow(otherParty), key))
-            else -> FlowException("A known public key or external reference must be provided for this flow")
+    override fun call(): SignedData<OwnershipClaim> {
+        return if (uuid != null) {
+            subFlow(RequestKeyFlow(initiateFlow(otherParty), uuid))
+        } else {
+            subFlow(RequestKeyFlow(initiateFlow(otherParty), key ?: throw IllegalArgumentException("You must specify" +
+                    "the identifier or a known public key")))
         }
         return null
     }
@@ -73,7 +72,7 @@ class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) :
 @InitiatedBy(ShareKeyInitiator::class)
 class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
     @Suspendable
-    override fun call(): SignedData<OwnershipClaim> {
+    override fun call() : SignedData<OwnershipClaim> {
         return subFlow(ShareKeyFlowHandler(otherSession))
     }
 }

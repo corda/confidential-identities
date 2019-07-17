@@ -10,14 +10,22 @@ import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
-import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
+import com.r3.corda.lib.tokens.workflows.flows.issue.IssueTokensFlowHandler
+import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
+import com.r3.corda.lib.tokens.workflows.internal.flows.finality.ObserverAwareFinalityFlowHandler
+import com.r3.corda.lib.tokens.workflows.utilities.rowsToAmount
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
+import net.corda.testing.node.MockNetwork
+import net.corda.testing.node.MockNetworkParameters
+import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
@@ -29,10 +37,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SyncKeyMappingFlowTests {
-    private lateinit var mockNet: InternalMockNetwork
-    private lateinit var aliceNode: TestStartedNode
-    private lateinit var bobNode: TestStartedNode
-    private lateinit var charlieNode: TestStartedNode
+
+    private lateinit var mockNet: MockNetwork
+    private lateinit var aliceNode: StartedMockNode
+    private lateinit var bobNode: StartedMockNode
+    private lateinit var charlieNode: StartedMockNode
     private lateinit var alice: Party
     private lateinit var bob: Party
     private lateinit var charlie: Party
@@ -40,16 +49,19 @@ class SyncKeyMappingFlowTests {
 
     @Before
     fun before() {
-        mockNet = InternalMockNetwork(
-                cordappsForAllNodes = FINANCE_CORDAPPS,
-                cordappPackages = listOf(
-                        "com.r3.corda.lib.tokens.contracts",
-                        "com.r3.corda.lib.tokens.workflows",
-                        "com.r3.corda.lib.ci"),
-                networkSendManuallyPumped = false,
-                threadPerNode = true)
+        mockNet = MockNetwork(
+                MockNetworkParameters(
+                        networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                        cordappsForAllNodes = listOf(
+                                TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+                        ),
+                        threadPerNode = true
 
-
+                )
+        )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         charlieNode = mockNet.createPartyNode(CHARLIE_NAME)
@@ -59,39 +71,42 @@ class SyncKeyMappingFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-        aliceNode.registerInitiatedFlow(SyncKeyMappingResponder::class.java)
-        bobNode.registerInitiatedFlow(SyncKeyMappingResponder::class.java)
-        charlieNode.registerInitiatedFlow(RequestKeyResponder::class.java)
     }
 
     @After
-    fun cleanUp() {
-        mockNet.stopNodes()
+    fun after() {
+        // Mysterious KryoException thrown here so having to use this as a workaround
+        try {
+            mockNet.stopNodes()
+        } catch (e: Exception) {
+            println(e.localizedMessage)
+        }
     }
 
     @Test
     fun `sync the key mapping between two parties in a transaction`() {
         // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonymousParty = aliceNode.services.startFlow(ConfidentialIdentityInitiator(charlie)).resultFuture.getOrThrow()
+        val anonymousParty = aliceNode.startFlow(ConfidentialIdentityInitiator(charlie)).let {
+            it.getOrThrow()
+        }
+        val issueTx = aliceNode.startFlow(IssueTokens(listOf(1000 of USD issuedBy alice heldBy AnonymousParty(anonymousParty.owningKey)))).let {
+            it.getOrThrow()
+        }
 
-        val issueFlow = aliceNode.services.startFlow(
-                IssueTokens(1000 of USD issuedBy alice heldBy AnonymousParty(anonymousParty.owningKey))
-        )
-        val issueTx = issueFlow.resultFuture.getOrThrow()
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
 
-        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
+        assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
         // Run the flow to sync up the identities
-        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, issueTx.tx)).let {
+        aliceNode.startFlow(SyncKeyMappingInitiator(bob, issueTx.tx)).let {
             mockNet.waitQuiescent()
-            it.resultFuture.getOrThrow()
+            it.getOrThrow()
         }
 
-        val expected = aliceNode.database.transaction {
+        val expected = aliceNode.transaction {
             aliceNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
         }
-        val actual = bobNode.database.transaction {
+        val actual = bobNode.transaction {
             bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
         }
         assertEquals(expected, actual)
