@@ -40,11 +40,11 @@ private constructor(
     override fun call() {
         progressTracker.currentStep = SYNCING_KEY_MAPPINGS
         val confidentialIdentities =
-        if (tx != null) {
-            extractConfidentialIdentities(tx)
-        } else {
-            identitiesToSync?: throw IllegalArgumentException("A transaction or a list of anonymous parties must be provided to this flow.")
-        }
+                if (tx != null) {
+                    extractConfidentialIdentities(tx)
+                } else {
+                    identitiesToSync ?: throw IllegalArgumentException("A transaction or a list of anonymous parties must be provided to this flow.")
+                }
 
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
@@ -80,8 +80,10 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         object RECEIVING_PARTIES : ProgressTracker.Step("Receiving potential party objects for unknown identities.")
         object NO_PARTIES_RECEIVED : ProgressTracker.Step("None of the requested unknown parties were resolved by the counter party. " +
                 "Terminating the flow early.")
+
         object REQUESTING_PROOF_OF_ID : ProgressTracker.Step("Requesting a signed key to party mapping for the received parties to verify" +
                 "the authenticity of the party.")
+
         object IDENTITIES_SYNCHRONISED : ProgressTracker.Step("Identities have finished synchronising.")
     }
 

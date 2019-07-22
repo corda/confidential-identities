@@ -8,7 +8,10 @@ import net.corda.confidential.identities.ShareKeyFlowHandler
 import net.corda.confidential.identities.SyncKeyMappingFlow
 import net.corda.confidential.identities.SyncKeyMappingFlowHandler
 import net.corda.core.crypto.SignedData
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.InitiatedBy
+import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
@@ -72,7 +75,7 @@ class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) :
 @InitiatedBy(ShareKeyInitiator::class)
 class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
     @Suspendable
-    override fun call() : SignedData<OwnershipClaim> {
+    override fun call(): SignedData<OwnershipClaim> {
         return subFlow(ShareKeyFlowHandler(otherSession))
     }
 }
@@ -89,11 +92,11 @@ private constructor(
 
     @Suspendable
     override fun call() {
-        if (tx != null ) {
+        if (tx != null) {
             subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
         } else {
-            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync ?:
-                throw IllegalArgumentException("")))
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync
+                    ?: throw IllegalArgumentException("A list of anonymous parties must be provided to this flow.")))
         }
     }
 }
