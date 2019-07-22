@@ -12,7 +12,6 @@ tags
 **/build/*
 !docs/build/*
 
-
 lib/dokka.jar
 
 ### JetBrains template
@@ -60,9 +59,7 @@ lib/dokka.jar
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
-/java-source/out/
-/kotlin-source/out/
+**/out/*
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
