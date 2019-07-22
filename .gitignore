@@ -9,10 +9,9 @@ tags
 *.orig
 
 # General build files
-workflows/build/*
-workflows/logs/*
-workflow/out/*
+**/build/*
 !docs/build/*
+
 
 lib/dokka.jar
 

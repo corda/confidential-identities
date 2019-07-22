@@ -1,7 +1,6 @@
-package net.corda.confidential.identities
+package com.r3.corda.lib.ci
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.OwnershipClaim
 import net.corda.core.crypto.SignedData
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
@@ -11,8 +10,6 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
-import com.r3.corda.lib.ci.createSignedOwnershipClaim
-import com.r3.corda.lib.ci.validateSignature
 import java.util.*
 
 /**

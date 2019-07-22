@@ -3,8 +3,9 @@ package com.r3.corda.lib.ci
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SignedData
-import net.corda.core.flows.*
-import com.r3.corda.lib.ci.OwnershipClaim
+import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
@@ -47,7 +48,7 @@ class RequestKeyFlow(
         progressTracker.currentStep = REQUESTING_KEY
         var accountData = CreateKeyForAccount(uuid)
         if (key != null) {
-           accountData = CreateKeyForAccount(key)
+            accountData = CreateKeyForAccount(key)
         }
         val signedOwnershipClaim = session.sendAndReceive<SignedData<OwnershipClaim>>(accountData).unwrap { it }
 

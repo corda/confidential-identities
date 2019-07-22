@@ -1,7 +1,5 @@
-package net.corda.confidential.identities
+package com.r3.corda.lib.ci
 
-import com.r3.corda.lib.ci.ShareKeyInitiator
-import com.r3.corda.lib.ci.ShareKeyResponder
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
@@ -14,10 +12,6 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
-import net.corda.testing.node.internal.FINANCE_CORDAPPS
-import net.corda.testing.node.internal.InternalMockNetwork
-import net.corda.testing.node.internal.TestStartedNode
-import net.corda.testing.node.internal.startFlow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before

@@ -3,12 +3,11 @@ package com.r3.corda.lib.ci
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlow
 import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlowHandler
-import net.corda.confidential.identities.ShareKeyFlow
-import net.corda.confidential.identities.ShareKeyFlowHandler
-import net.corda.confidential.identities.SyncKeyMappingFlow
-import net.corda.confidential.identities.SyncKeyMappingFlowHandler
 import net.corda.core.crypto.SignedData
-import net.corda.core.flows.*
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.InitiatedBy
+import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.transactions.WireTransaction
