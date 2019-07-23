@@ -8,13 +8,18 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.transactions.WireTransaction
 import java.security.PublicKey
 import java.util.*
 
+/**
+ * Initiating version of [RequestConfidentialIdentityFlow].
+ */
 @InitiatingFlow
+@StartableByRPC
 class ConfidentialIdentityInitiator(private val party: Party) : FlowLogic<PartyAndCertificate>() {
     @Suspendable
     override fun call(): PartyAndCertificate {
@@ -22,6 +27,9 @@ class ConfidentialIdentityInitiator(private val party: Party) : FlowLogic<PartyA
     }
 }
 
+/**
+ * Responder flow to [ConfidentialIdentityInitiator].
+ */
 @InitiatedBy(ConfidentialIdentityInitiator::class)
 class ConfidentialIdentityResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
@@ -31,11 +39,16 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession) : Flo
 
 }
 
+/**
+ * Initiating version of [RequestKeyFlow].
+ */
 @InitiatingFlow
-class RequestKeyInitiator(
+class RequestKeyInitiator
+private constructor(
         private val otherParty: Party,
         private val uuid: UUID?,
-        private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>>() {
+        private val key: PublicKey?
+) : FlowLogic<SignedData<OwnershipClaim>>() {
 
     constructor(otherParty: Party, uuid: UUID) : this(otherParty, uuid, null)
     constructor(otherParty: Party, key: PublicKey) : this(otherParty, null, key)
@@ -51,6 +64,9 @@ class RequestKeyInitiator(
     }
 }
 
+/**
+ * Responder flow to [RequestKeyInitiator].
+ */
 @InitiatedBy(RequestKeyInitiator::class)
 class RequestKeyResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
@@ -59,6 +75,9 @@ class RequestKeyResponder(private val otherSession: FlowSession) : FlowLogic<Uni
     }
 }
 
+/**
+ * Initiating version of [ShareKeyFlow].
+ */
 @InitiatingFlow
 class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) : FlowLogic<Unit>() {
     @Suspendable
@@ -67,6 +86,9 @@ class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) :
     }
 }
 
+/**
+ * Responder flow to [ShareKeyInitiator].
+ */
 @InitiatedBy(ShareKeyInitiator::class)
 class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
     @Suspendable
@@ -75,7 +97,9 @@ class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<Signe
     }
 }
 
-
+/**
+ * Initiating version of [SyncKeyMappingFlow].
+ */
 @InitiatingFlow
 class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Unit>() {
     @Suspendable
@@ -84,6 +108,9 @@ class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: Wir
     }
 }
 
+/**
+ * Responder flow to [SyncKeyMappingInitiator].
+ */
 @InitiatedBy(SyncKeyMappingInitiator::class)
 class SyncKeyMappingResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable

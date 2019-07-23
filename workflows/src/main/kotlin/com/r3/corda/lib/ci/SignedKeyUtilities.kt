@@ -1,7 +1,6 @@
 package com.r3.corda.lib.ci
 
 import net.corda.core.CordaInternal
-import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SignedData
 import net.corda.core.crypto.newSecureRandom
 import net.corda.core.internal.VisibleForTesting
@@ -11,7 +10,6 @@ import net.corda.core.serialization.serialize
 import net.corda.core.utilities.OpaqueBytes
 import java.math.BigInteger
 import java.security.PublicKey
-import java.security.SignatureException
 import java.util.*
 
 /**
@@ -23,12 +21,12 @@ import java.util.*
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaim(serviceHub: ServiceHub, uuid: UUID): SignedData<OwnershipClaim> {
+fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, uuid: UUID): SignedData<OwnershipClaim> {
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
     val nonce = BigInteger(123, newSecureRandom()).toByte()
     val ownershipClaim = OwnershipClaim(OpaqueBytes.of(nonce), newKey)
-    val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
+    val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().bytes, nodeParty.owningKey)
     return SignedData(ownershipClaim.serialize(), sig)
 }
 
@@ -44,21 +42,8 @@ fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, knownKey: Pub
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
     val nonce = BigInteger(123, newSecureRandom()).toByte()
     val ownershipClaim = OwnershipClaim(OpaqueBytes.of(nonce), knownKey)
-    val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
+    val sig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().bytes, nodeParty.owningKey)
     return SignedData(ownershipClaim.serialize(), sig)
-}
-
-/**
- * Verifies the [DigitalSignature.WithKey] on the [OwnershipClaim] matches the signature of the node that generated it.
- */
-@CordaInternal
-@VisibleForTesting
-fun validateSignature(signedOwnershipClaim: SignedData<OwnershipClaim>) {
-    try {
-        signedOwnershipClaim.sig.verify(signedOwnershipClaim.raw.hash.bytes)
-    } catch (ex: SignatureException) {
-        throw SignatureException("The signature provided does not match that of identity that created signed ownership", ex)
-    }
 }
 
 /**
@@ -66,16 +51,14 @@ fun validateSignature(signedOwnershipClaim: SignedData<OwnershipClaim>) {
  * new [PublicKey] to be associated with the external ID. A known [PublicKey] can be provided to instruct the node to register
  * a mapping between that public key and the node party.
  *
- * @param _uuid The external ID for a new key to be mapped to
+ * @param uuid The external ID for a new key to be mapped to
  * @param knownKey The [PublicKey] to be mapped to the node party
  */
 @CordaSerializable
-class CreateKeyForAccount(private val _uuid: UUID?, val knownKey: PublicKey?) {
+class CreateKeyForAccount
+private constructor(val uuid: UUID?, val knownKey: PublicKey?) {
     constructor(knownKey: PublicKey) : this(null, knownKey)
     constructor(uuid: UUID) : this(uuid, null)
-
-    val uuid: UUID?
-        get() = _uuid
 }
 
 /**

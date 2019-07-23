@@ -6,7 +6,6 @@ import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
@@ -23,7 +22,7 @@ class ShareKeyFlow(
 
     @Suspendable
     override fun call() {
-        val signedOwnershipClaim = createSignedOwnershipClaim(serviceHub, uuid)
+        val signedOwnershipClaim = createSignedOwnershipClaimFromUUID(serviceHub, uuid)
         session.send(signedOwnershipClaim)
     }
 }
@@ -49,12 +48,12 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
             "Expected a signature by ${otherSession.counterparty.owningKey.toBase58String()}, but received by ${signedOwnershipClaim.sig.by.toBase58String()}}"
         }
         progressTracker.currentStep = VERIFYING_SIGNATURE
-        validateSignature(signedOwnershipClaim)
+        val ownershipClaim = signedOwnershipClaim.verified()
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
         val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.sig.by))
                 ?: throw FlowException("Could not resolve party for key ${signedOwnershipClaim.sig.by}")
-        val isRegistered = serviceHub.identityService.registerKeyToParty(signedOwnershipClaim.raw.deserialize().key, party)
+        val isRegistered = serviceHub.identityService.registerKeyToParty(ownershipClaim.key, party)
         if (!isRegistered) {
             throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
         }
