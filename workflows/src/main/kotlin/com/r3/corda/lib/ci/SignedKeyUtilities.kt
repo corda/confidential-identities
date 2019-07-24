@@ -28,14 +28,14 @@ typealias OwnershipClaim = OpaqueBytes
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaim(serviceHub: ServiceHub, nonce: OwnershipClaim, uuid: UUID): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
+fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, nonce: OwnershipClaim, uuid: UUID): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
     require(nonce.sha256().size == 32)
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
-    val ownershipClaim = SignedOwnershipClaim(nonce, newKey)
-    val hostNodeSig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
-    val newKeySig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, newKey)
-    return SerializedSignedOwnershipClaim(ownershipClaim.serialize(), hostNodeSig, newKeySig)
+    val signedOwnershipClaim = SignedOwnershipClaim(nonce, newKey)
+    val hostNodeSig = serviceHub.keyManagementService.sign(signedOwnershipClaim.serialize().hash.bytes, nodeParty.owningKey)
+    val newKeySig = serviceHub.keyManagementService.sign(signedOwnershipClaim.serialize().hash.bytes, newKey)
+    return SerializedSignedOwnershipClaim(signedOwnershipClaim.serialize(), hostNodeSig, newKeySig)
 }
 
 /**
@@ -49,10 +49,10 @@ fun createSignedOwnershipClaim(serviceHub: ServiceHub, nonce: OwnershipClaim, uu
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, nonce: OwnershipClaim, knownKey: PublicKey): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
     require(nonce.sha256().size == 32)
     val nodeParty = serviceHub.myInfo.legalIdentities.first()
-    val ownershipClaim = SignedOwnershipClaim(nonce, knownKey)
-    val hostNodeSig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, nodeParty.owningKey)
-    val newKeySig = serviceHub.keyManagementService.sign(ownershipClaim.serialize().hash.bytes, knownKey)
-    return SerializedSignedOwnershipClaim(ownershipClaim.serialize(), hostNodeSig, newKeySig)
+    val signedOwnershipClaim = SignedOwnershipClaim(nonce, knownKey)
+    val hostNodeSig = serviceHub.keyManagementService.sign(signedOwnershipClaim.serialize().hash.bytes, nodeParty.owningKey)
+    val newKeySig = serviceHub.keyManagementService.sign(signedOwnershipClaim.serialize().hash.bytes, knownKey)
+    return SerializedSignedOwnershipClaim(signedOwnershipClaim.serialize(), hostNodeSig, newKeySig)
 }
 
 /**

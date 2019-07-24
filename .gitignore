@@ -9,9 +9,7 @@ tags
 *.orig
 
 # General build files
-workflows/build/*
-workflows/logs/*
-workflow/out/*
+**/build/*
 !docs/build/*
 
 lib/dokka.jar
@@ -61,9 +59,7 @@ lib/dokka.jar
 ## Plugin-specific files:
 
 # IntelliJ
-/out/
-/java-source/out/
-/kotlin-source/out/
+**/out/*
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/

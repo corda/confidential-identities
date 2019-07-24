@@ -10,7 +10,7 @@ buildscript {
         log4j_version = '2.11.2'
         corda_platform_version = '4'
         tokens_release_group='com.r3.corda.lib.tokens'
-        tokens_sdk_version='1.0-RC03'
+        tokens_sdk_version='1.0'
         confidential_id_release_group = "com.r3.corda.lib.ci"
         confidential_id_release_version = "1.0"
     }
@@ -22,6 +22,8 @@ buildscript {
         maven { url 'https://jitpack.io' }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
     }
 
@@ -47,7 +49,8 @@ allprojects {
         mavenLocal()
         jcenter()
         mavenCentral()
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-tokens-dev" }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }

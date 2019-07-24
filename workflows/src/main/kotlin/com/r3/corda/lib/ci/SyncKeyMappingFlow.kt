@@ -1,4 +1,4 @@
-package net.corda.confidential.identities
+package com.r3.corda.lib.ci
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.ci.RequestKeyInitiator

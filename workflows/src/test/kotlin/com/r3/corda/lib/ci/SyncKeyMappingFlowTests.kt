@@ -1,19 +1,11 @@
-package net.corda.confidential.identities
+package com.r3.corda.lib.ci
 
-import com.r3.corda.lib.ci.ConfidentialIdentityInitiator
-import com.r3.corda.lib.ci.RequestKeyResponder
-import com.r3.corda.lib.ci.SyncKeyMappingInitiator
-import com.r3.corda.lib.ci.SyncKeyMappingResponder
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
-import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
-import com.r3.corda.lib.tokens.workflows.flows.issue.IssueTokensFlowHandler
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
-import com.r3.corda.lib.tokens.workflows.internal.flows.finality.ObserverAwareFinalityFlowHandler
-import com.r3.corda.lib.tokens.workflows.utilities.rowsToAmount
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
@@ -26,10 +18,6 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
-import net.corda.testing.node.internal.FINANCE_CORDAPPS
-import net.corda.testing.node.internal.InternalMockNetwork
-import net.corda.testing.node.internal.TestStartedNode
-import net.corda.testing.node.internal.startFlow
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -93,7 +81,7 @@ class SyncKeyMappingFlowTests {
             it.getOrThrow()
         }
 
-        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
+        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
 
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
