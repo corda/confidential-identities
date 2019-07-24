@@ -7,7 +7,6 @@ import net.corda.confidential.identities.ShareKeyFlow
 import net.corda.confidential.identities.ShareKeyFlowHandler
 import net.corda.confidential.identities.SyncKeyMappingFlow
 import net.corda.confidential.identities.SyncKeyMappingFlowHandler
-import net.corda.core.crypto.SignedData
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
@@ -36,13 +35,13 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession) : Flo
 class RequestKeyInitiator(
         private val otherParty: Party,
         private val uuid: UUID?,
-        private val key: PublicKey?) : FlowLogic<SignedData<OwnershipClaim>>() {
+        private val key: PublicKey?) : FlowLogic<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>() {
 
     constructor(otherParty: Party, uuid: UUID) : this(otherParty, uuid, null)
     constructor(otherParty: Party, key: PublicKey) : this(otherParty, null, key)
 
     @Suspendable
-    override fun call(): SignedData<OwnershipClaim> {
+    override fun call(): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
         return if (uuid != null) {
             subFlow(RequestKeyFlow(initiateFlow(otherParty), uuid))
         } else {
@@ -69,9 +68,9 @@ class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) :
 }
 
 @InitiatedBy(ShareKeyInitiator::class)
-class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedData<OwnershipClaim>>() {
+class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>() {
     @Suspendable
-    override fun call(): SignedData<OwnershipClaim> {
+    override fun call(): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
         return subFlow(ShareKeyFlowHandler(otherSession))
     }
 }
