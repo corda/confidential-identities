@@ -50,24 +50,24 @@ private constructor(
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseId = SecureHash.randomSHA256()
         val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseId, uuid) else RequestKeyForAccount(challengeResponseId, key)
-        val receivedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
+        val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
         try {
-            receivedKeyForAccount.signedChallengeResponse.sig.verify(receivedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
+            signedKeyForAccount.signedChallengeResponse.sig.verify(signedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
         } catch (ex: SignatureException) {
             throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
         }
         progressTracker.currentStep = KEY_VERIFIED
 
         progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
-        val receivedChallengeResponseId = receivedKeyForAccount.signedChallengeResponse.raw.deserialize()
+        val receivedChallengeResponseId = signedKeyForAccount.signedChallengeResponse.raw.deserialize()
         require(challengeResponseId == receivedChallengeResponseId)
         progressTracker.currentStep = CHALLENGE_RESPONSE_VERIFIED
 
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
         val counterParty = session.counterparty
-        val newKey = receivedKeyForAccount.publicKey
+        val newKey = signedKeyForAccount.publicKey
 
         try {
             serviceHub.identityService.registerKeyToParty(newKey, counterParty)
@@ -75,7 +75,7 @@ private constructor(
             throw FlowException("Could not register a new key for party: $counterParty as the provided public key is already registered " +
                     "or registered to a different party.")
         }
-        return receivedKeyForAccount
+        return signedKeyForAccount
     }
 }
 

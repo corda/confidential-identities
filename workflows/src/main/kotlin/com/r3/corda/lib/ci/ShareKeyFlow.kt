@@ -2,15 +2,16 @@ package net.corda.confidential.identities
 
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.*
+import com.r3.corda.lib.ci.RequestKeyFlow
+import com.r3.corda.lib.ci.SignedKeyForAccount
+import com.r3.corda.lib.ci.createSignedOwnershipClaimFromUUID
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.ProgressTracker
-import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
+import java.security.SignatureException
 import java.util.*
 
 /**
@@ -24,13 +25,13 @@ class ShareKeyFlow(
 
     @Suspendable
     override fun call() {
-        val nonce = OwnershipClaim(SecureHash.randomSHA256().bytes)
-        val signedOwnershipClaim = createSignedOwnershipClaimFromUUID(serviceHub, nonce, uuid)
-        session.send(signedOwnershipClaim)
+        val challengeResponseId = SecureHash.randomSHA256()
+        val signedKeyForAccount = createSignedOwnershipClaimFromUUID(serviceHub, challengeResponseId, uuid)
+        session.send(signedKeyForAccount)
     }
 }
 
-class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>() {
+class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<SignedKeyForAccount>() {
 
     companion object {
         object VERIFYING_SIGNATURE : ProgressTracker.Step("Verifying counterparty's signature")
@@ -44,25 +45,27 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Ser
 
     @Suspendable
     @Throws(FlowException::class)
-    override fun call(): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
-        val signedOwnershipClaim = otherSession.receive<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>().unwrap { it }
-        // Ensure the counter party was the one that generated the key
-        require(otherSession.counterparty.owningKey == signedOwnershipClaim.hostNodeSig.by) {
-            "Expected a signature by ${otherSession.counterparty.owningKey.toBase58String()}, but received by ${signedOwnershipClaim.hostNodeSig.by.toBase58String()}}"
-        }
+    override fun call(): SignedKeyForAccount {
+        val signedKeyForAccount = otherSession.receive<SignedKeyForAccount>().unwrap { it }
+
         progressTracker.currentStep = VERIFYING_SIGNATURE
-        validateHostNodeAndPublicKeySignatures(signedOwnershipClaim)
+        try {
+            signedKeyForAccount.signedChallengeResponse.sig.verify(signedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
+        } catch (ex: SignatureException) {
+            throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
+        }
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
-        // Use the networkMapCache to lookup the legal identity of the node that signed the ownership claim
-        require(otherSession.counterparty == serviceHub.networkMapCache.getNodesByLegalIdentityKey(signedOwnershipClaim.hostNodeSig.by).single().legalIdentities.single())
+        // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
+        val counterParty = otherSession.counterparty
+        val newKey = signedKeyForAccount.publicKey
 
-        val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.hostNodeSig.by))
-                ?: throw FlowException("Could not resolve party for key ${signedOwnershipClaim.hostNodeSig.by}")
-        val isRegistered = serviceHub.identityService.registerKeyToParty(signedOwnershipClaim.publicKeySig.by, party)
-        if (!isRegistered) {
-            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
+        try {
+            serviceHub.identityService.registerKeyToParty(newKey, counterParty)
+        } catch (e: Exception) {
+            throw FlowException("Could not register a new key for party: $counterParty as the provided public key is already registered " +
+                    "or registered to a different party.")
         }
-        return signedOwnershipClaim
+        return signedKeyForAccount
     }
 }

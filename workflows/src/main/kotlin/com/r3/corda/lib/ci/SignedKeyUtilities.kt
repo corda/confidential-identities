@@ -12,7 +12,7 @@ import java.security.PublicKey
 import java.util.*
 
 /**
- * Random number.
+ * Random number used for authentication of communication between flow sessions.
  */
 typealias ChallengeResponse = SecureHash.SHA256
 
