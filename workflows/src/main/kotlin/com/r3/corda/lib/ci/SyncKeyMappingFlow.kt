@@ -21,7 +21,13 @@ import java.security.PublicKey
  * The counter-party will request a new key mapping for each of the unresolved identities by calling [RequestKeyFlow] as
  * an inline flow.
  */
-class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireTransaction) : FlowLogic<Unit>() {
+class SyncKeyMappingFlow
+private constructor(
+        private val session: FlowSession,
+        private val tx: WireTransaction?,
+        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+    constructor(session: FlowSession, tx: WireTransaction) : this(session, tx, null)
+    constructor(session: FlowSession, identitiesToSync: List<AbstractParty>) : this(session, null, identitiesToSync)
 
     companion object {
         object SYNCING_KEY_MAPPINGS : ProgressTracker.Step("Syncing key mappings.")
@@ -33,12 +39,17 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
     @Suspendable
     override fun call() {
         progressTracker.currentStep = SYNCING_KEY_MAPPINGS
-        val confidentialIdentities = extractConfidentialIdentities()
+        val confidentialIdentities =
+                if (tx != null) {
+                    extractConfidentialIdentities(tx)
+                } else {
+                    identitiesToSync ?: throw IllegalArgumentException("A transaction or a list of anonymous parties must be provided to this flow.")
+                }
 
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
             require(req.all { it in confidentialIdentities }) {
-                "${session.counterparty} requested a confidential identity not part of transaction: ${tx.id}"
+                "${session.counterparty} requested resolution of a confidential identity that is not present in the list of identities initially provided."
             }
             req
         }
@@ -46,7 +57,7 @@ class SyncKeyMappingFlow(private val session: FlowSession, private val tx: WireT
         session.send(resolvedIds)
     }
 
-    private fun extractConfidentialIdentities(): List<AbstractParty> {
+    private fun extractConfidentialIdentities(tx: WireTransaction): List<AbstractParty> {
         val inputStates: List<ContractState> = (tx.inputs.toSet()).mapNotNull {
             try {
                 serviceHub.loadState(it).data
@@ -69,8 +80,10 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         object RECEIVING_PARTIES : ProgressTracker.Step("Receiving potential party objects for unknown identities.")
         object NO_PARTIES_RECEIVED : ProgressTracker.Step("None of the requested unknown parties were resolved by the counter party. " +
                 "Terminating the flow early.")
+
         object REQUESTING_PROOF_OF_ID : ProgressTracker.Step("Requesting a signed key to party mapping for the received parties to verify" +
                 "the authenticity of the party.")
+
         object IDENTITIES_SYNCHRONISED : ProgressTracker.Step("Identities have finished synchronising.")
     }
 

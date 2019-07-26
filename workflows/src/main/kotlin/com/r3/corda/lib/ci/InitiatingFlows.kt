@@ -103,10 +103,22 @@ class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<Seria
  * Initiating version of [SyncKeyMappingFlow].
  */
 @InitiatingFlow
-class SyncKeyMappingInitiator(private val otherParty: Party, private val tx: WireTransaction) : FlowLogic<Unit>() {
+class SyncKeyMappingInitiator
+private constructor(
+        private val otherParty: Party,
+        private val tx: WireTransaction?,
+        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+    constructor(otherParty: Party, tx: WireTransaction) : this(otherParty, tx, null)
+    constructor(otherParty: Party, identitiesToSync: List<AbstractParty>) : this(otherParty, null, identitiesToSync)
+
     @Suspendable
     override fun call() {
-        subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+        if (tx != null) {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+        } else {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync
+                    ?: throw IllegalArgumentException("A list of anonymous parties must be provided to this flow.")))
+        }
     }
 }
 
