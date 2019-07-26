@@ -3,17 +3,15 @@ package com.r3.corda.lib.ci
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
-import net.corda.core.crypto.SignedData
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
-import net.corda.core.utilities.toBase58String
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
+import java.security.SignatureException
 import java.util.*
 
 /**
@@ -29,7 +27,7 @@ class RequestKeyFlow
 private constructor(
         private val session: FlowSession,
         private val uuid: UUID,
-        private val key: PublicKey?) : FlowLogic<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>() {
+        private val key: PublicKey?) : FlowLogic<SignedKeyForAccount>() {
     constructor(session: FlowSession, uuid: UUID) : this(session, uuid, null)
     constructor(session: FlowSession, key: PublicKey) : this(session, UniqueIdentifier().id, key)
 
@@ -37,57 +35,63 @@ private constructor(
         object REQUESTING_KEY : ProgressTracker.Step("Requesting a public key")
         object VERIFYING_KEY : ProgressTracker.Step("Verifying counterparty's signature")
         object KEY_VERIFIED : ProgressTracker.Step("Signature is correct")
+        object VERIFYING_CHALLENGE_RESPONSE : ProgressTracker.Step("Verifying the received SHA-256 matches the original that was sent")
+        object CHALLENGE_RESPONSE_VERIFIED : ProgressTracker.Step("SHA-256 is correct")
 
         @JvmStatic
-        fun tracker(): ProgressTracker = ProgressTracker(REQUESTING_KEY, VERIFYING_KEY, KEY_VERIFIED)
+        fun tracker(): ProgressTracker = ProgressTracker(REQUESTING_KEY, VERIFYING_KEY, KEY_VERIFIED, VERIFYING_CHALLENGE_RESPONSE, CHALLENGE_RESPONSE_VERIFIED)
     }
 
     override val progressTracker = tracker()
 
     @Suspendable
     @Throws(FlowException::class)
-    override fun call(): SerializedSignedOwnershipClaim<SignedOwnershipClaim> {
+    override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
-        val nonce = OwnershipClaim(SecureHash.randomSHA256().bytes)
-        val accountData = if (key == null) CreateKeyForAccount(nonce, uuid) else CreateKeyForAccount(nonce, key)
-        val signedOwnershipClaim = session.sendAndReceive<SerializedSignedOwnershipClaim<SignedOwnershipClaim>>(accountData).unwrap { it }
+        val challengeResponseId = SecureHash.randomSHA256()
+        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseId, uuid) else RequestKeyForAccount(challengeResponseId, key)
+        val receivedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
 
-        // Ensure the counter party was the one that generated the ownership claim
-        require(session.counterparty.owningKey == signedOwnershipClaim.hostNodeSig.by) {
-            "Expected a signature by ${session.counterparty.owningKey.toBase58String()}, but received by ${signedOwnershipClaim.hostNodeSig.by.toBase58String()}}"
-        }
         progressTracker.currentStep = VERIFYING_KEY
-        validateHostNodeAndPublicKeySignatures(signedOwnershipClaim)
+        try {
+            receivedKeyForAccount.signedChallengeResponse.sig.verify(receivedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
+        } catch (ex: SignatureException) {
+            throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
+        }
         progressTracker.currentStep = KEY_VERIFIED
 
-        // Use the networkMapCache to lookup the legal identity of the node that signed the ownership claim
-        require(session.counterparty == serviceHub.networkMapCache.getNodesByLegalIdentityKey(signedOwnershipClaim.hostNodeSig.by).single().legalIdentities.single())
+        progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
+        val receivedChallengeResponseId = receivedKeyForAccount.signedChallengeResponse.raw.deserialize()
+        require(challengeResponseId == receivedChallengeResponseId)
+        progressTracker.currentStep = CHALLENGE_RESPONSE_VERIFIED
 
-        val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(signedOwnershipClaim.hostNodeSig.by))
-                ?: throw FlowException("Could not resolve party for key ${signedOwnershipClaim.hostNodeSig.by}")
+        // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
+        val counterParty = session.counterparty
+        val newKey = receivedKeyForAccount.publicKey
 
-        val newKey = signedOwnershipClaim.raw.deserialize().key
-        val isRegistered = serviceHub.identityService.registerKeyToParty(newKey, party)
-        if (!isRegistered) {
-            throw FlowException("Could not generate a new key for $party as the key is already registered or registered to a different party.")
+        try {
+            serviceHub.identityService.registerKeyToParty(newKey, counterParty)
+        } catch (e: Exception) {
+            throw FlowException("Could not register a new key for party: $counterParty as the provided public key is already registered " +
+                    "or registered to a different party.")
         }
-        return signedOwnershipClaim
+        return receivedKeyForAccount
     }
 }
 
 class RequestKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val request = otherSession.receive<CreateKeyForAccount>().unwrap {
+        val request = otherSession.receive<RequestKeyForAccount>().unwrap {
             check((it.uuid != null) xor (it.knownKey != null)) {
                 "CreateKeyForAccount request should porivde either uuid or knownKey"
             }
             it
         }
         if (request.uuid != null) {
-            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.nonce, request.uuid!!))
+            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseId, request.uuid!!))
         } else if (request.knownKey != null) {
-            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.nonce, request.knownKey))
+            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseId, request.knownKey))
         }
     }
 }

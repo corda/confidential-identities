@@ -8,7 +8,6 @@ import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
-import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
@@ -72,10 +71,9 @@ class RequestKeyFlowTests {
     @Test
     fun `request new key from another party`() {
         // Alice requests that bob generates a new key for an account
-        val keyForBob = aliceNode.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).let {
+        val newKey = aliceNode.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).let {
             it.getOrThrow()
-        }
-        val bobKey = keyForBob.raw.deserialize().key
+        }.publicKey
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -83,9 +81,9 @@ class RequestKeyFlowTests {
         assertThat(bobKeys).hasSize(2)
         assertThat(aliceKeys).hasSize(1)
 
-        assertThat(bobNode.services.keyManagementService.keys).contains(bobKey)
+        assertThat(bobNode.services.keyManagementService.keys).contains(newKey)
 
-        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(AnonymousParty(bobKey))
+        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(AnonymousParty(newKey))
         assertThat(resolvedBobParty).isEqualTo(bob)
     }
 
