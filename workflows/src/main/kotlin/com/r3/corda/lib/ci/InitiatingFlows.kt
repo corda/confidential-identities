@@ -6,8 +6,10 @@ import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConf
 import net.corda.confidential.identities.ShareKeyFlow
 import net.corda.confidential.identities.ShareKeyFlowHandler
 import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
+import net.corda.core.transactions.WireTransaction
 import java.security.PublicKey
 import java.util.*
 
@@ -93,36 +95,36 @@ class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<Signe
     }
 }
 
-///**
-// * Initiating version of [SyncKeyMappingFlow].
-// */
-//@InitiatingFlow
-//class SyncKeyMappingInitiator
-//private constructor(
-//        private val otherParty: Party,
-//        private val tx: WireTransaction?,
-//        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
-//    constructor(otherParty: Party, tx: WireTransaction) : this(otherParty, tx, null)
-//    constructor(otherParty: Party, identitiesToSync: List<AbstractParty>) : this(otherParty, null, identitiesToSync)
-//
-//    @Suspendable
-//    override fun call() {
-//        if (tx != null) {
-//            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
-//        } else {
-//            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync
-//                    ?: throw IllegalArgumentException("A list of anonymous parties must be provided to this flow.")))
-//        }
-//    }
-//}
-//
-///**
-// * Responder flow to [SyncKeyMappingInitiator].
-// */
-//@InitiatedBy(SyncKeyMappingInitiator::class)
-//class SyncKeyMappingResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
-//    @Suspendable
-//    override fun call() {
-//        subFlow(SyncKeyMappingFlowHandler(otherSession))
-//    }
-//}
+/**
+ * Initiating version of [SyncKeyMappingFlow].
+ */
+@InitiatingFlow
+class SyncKeyMappingInitiator
+private constructor(
+        private val otherParty: Party,
+        private val tx: WireTransaction?,
+        private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+    constructor(otherParty: Party, tx: WireTransaction) : this(otherParty, tx, null)
+    constructor(otherParty: Party, identitiesToSync: List<AbstractParty>) : this(otherParty, null, identitiesToSync)
+
+    @Suspendable
+    override fun call() {
+        if (tx != null) {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), tx))
+        } else {
+            subFlow(SyncKeyMappingFlow(initiateFlow(otherParty), identitiesToSync
+                    ?: throw IllegalArgumentException("A list of anonymous parties must be provided to this flow.")))
+        }
+    }
+}
+
+/**
+ * Responder flow to [SyncKeyMappingInitiator].
+ */
+@InitiatedBy(SyncKeyMappingInitiator::class)
+class SyncKeyMappingResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        subFlow(SyncKeyMappingFlowHandler(otherSession))
+    }
+}
