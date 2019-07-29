@@ -5,19 +5,19 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.ci.RequestKeyFlow
 import com.r3.corda.lib.ci.SignedKeyForAccount
 import com.r3.corda.lib.ci.createSignedOwnershipClaimFromUUID
+import com.r3.corda.lib.ci.verifySignedChallengeResponseSignature
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
-import java.security.SignatureException
 import java.util.*
 
 /**
- * This flow is the inverse of [RequestKeyFlow] in that the initiating node generates the signed [SignedOwnershipClaim] and
- * shares it with the counter-party node who must verify the signature before registering a mapping between the new
- * [PublicKey] and the party that generated it.
+ * This flow is the inverse of [RequestKeyFlow] in that the initiating node generates the signed [SignedKeyForAccount] and
+ * shares it with the counter-party node who must verify the signature and the [ChallengeResponse] before registering a mapping between the new
+ * [PublicKey] and the counter-party.
  */
 class ShareKeyFlow(
         private val session: FlowSession,
@@ -49,11 +49,7 @@ class ShareKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Sig
         val signedKeyForAccount = otherSession.receive<SignedKeyForAccount>().unwrap { it }
 
         progressTracker.currentStep = VERIFYING_SIGNATURE
-        try {
-            signedKeyForAccount.signedChallengeResponse.sig.verify(signedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
-        } catch (ex: SignatureException) {
-            throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
-        }
+        verifySignedChallengeResponseSignature(signedKeyForAccount)
         progressTracker.currentStep = SIGNATURE_VERIFIED
 
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party

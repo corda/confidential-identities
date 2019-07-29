@@ -11,7 +11,6 @@ import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
-import java.security.SignatureException
 import java.util.*
 
 /**
@@ -19,9 +18,9 @@ import java.util.*
  * pair for a given [UUID] and register the new key mapping, or a known [PublicKey] can be supplied to the flow which will register
  * a mapping between this key and the requesting party.
  *
- * The generation of the signed [SignedOwnershipClaim] is delegated to the counter-party that sends the signed mapping back to
- * the requesting node. The requesting node verifies the signature of the signed mapping matches that of the counter-party
- * before registering the mapping in the [net.corda.core.node.services.IdentityService].
+ * The generation of the [SignedKeyForAccount] is delegated to the counter-party that signs the [ChallengeResponse] using the supplied
+ * [PublicKey] and sends it back to the requesting node. The requesting node verifies the signature on the [ChallengeResponse] and verifies
+ * the [ChallengeResponse] is the same as the one sent to the counter-party.
  */
 class RequestKeyFlow
 private constructor(
@@ -48,21 +47,17 @@ private constructor(
     @Throws(FlowException::class)
     override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
-        val challengeResponseId = SecureHash.randomSHA256()
-        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseId, uuid) else RequestKeyForAccount(challengeResponseId, key)
+        val challengeResponseQuestion = SecureHash.randomSHA256()
+        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseQuestion, uuid) else RequestKeyForAccount(challengeResponseQuestion, key)
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
-        try {
-            signedKeyForAccount.signedChallengeResponse.sig.verify(signedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
-        } catch (ex: SignatureException) {
-            throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
-        }
+        verifySignedChallengeResponseSignature(signedKeyForAccount)
         progressTracker.currentStep = KEY_VERIFIED
 
         progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
-        val receivedChallengeResponseId = signedKeyForAccount.signedChallengeResponse.raw.deserialize()
-        require(challengeResponseId == receivedChallengeResponseId)
+        val challengeResponseAnswer = signedKeyForAccount.signedChallengeResponse.raw.deserialize()
+        require(challengeResponseQuestion == challengeResponseAnswer)
         progressTracker.currentStep = CHALLENGE_RESPONSE_VERIFIED
 
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
@@ -84,14 +79,14 @@ class RequestKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<U
     override fun call() {
         val request = otherSession.receive<RequestKeyForAccount>().unwrap {
             check((it.uuid != null) xor (it.knownKey != null)) {
-                "CreateKeyForAccount request should porivde either uuid or knownKey"
+                "RequestKeyForAccount request should provide either a uuid or public key"
             }
             it
         }
         if (request.uuid != null) {
-            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseId, request.uuid!!))
+            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseQuestion, request.uuid!!))
         } else if (request.knownKey != null) {
-            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseId, request.knownKey))
+            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseQuestion, request.knownKey))
         }
     }
 }

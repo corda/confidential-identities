@@ -1,7 +1,6 @@
 package com.r3.corda.lib.ci
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.ci.RequestKeyInitiator
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.TransactionResolutionException
 import net.corda.core.flows.FlowLogic
@@ -15,7 +14,8 @@ import java.security.PublicKey
 
 /**
  * This flow allows a node to share the [PublicKey] to [Party] mapping data of unknown parties present in a given
- * transaction. The initiating node sends a list of confidential identities to the counter-party who attempts to resolve
+ * transaction. Alternatively, the initiating party can provide a list of [AbstractParty] they wish to synchronise the
+ * [PublicKey] to [Party] mappings. The initiating sends a list of confidential identities to the counter-party who attempts to resolve
  * them. Parties that cannot be resolved are returned to the initiating node.
  *
  * The counter-party will request a new key mapping for each of the unresolved identities by calling [RequestKeyFlow] as

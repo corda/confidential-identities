@@ -60,24 +60,34 @@ These should also be added to the `deployNodes` task with the following syntax:
 
 ## Flows 
 
+#### Challenge Response 
+
+We define the `ChallengeResponse` type alias of `SecureHash.SHA256` to be used to guard against a possible replay attack. 
+
 ### RequestKeyFlow
 
 This flow can be used to register a mapping in the `IdentityService` between the `PublicKey` and the `CordaX500Name` for 
 a confidential identity. This mapping is required for the node operator to be able to resolve the confidential identity. 
-A new key pair can be generated for an external ID given by a `UUID`. Alternatively, a node can provide the owning key for 
-confidential identity that will register the mapping between this key and the `CordaX500Name`.
 
-After node requests a new confidential key, the counterparty sends back the `SignedData<OwnershipClaim>` object that 
-wraps the confidential identity `PublicKey` and encrypts the `CordaX500Name`.
+The initiating node will generate a `ChallengeResponse` that is sent to the counter-party. The counter-party creates a
+new key pair for an external ID given by a `UUID`. Alternatively, a node can provide the owning key for 
+confidential identity that will be registered in the `IdentityService`. 
+
+After node requests a new confidential key, the counter-party sends back the `SignedKeyForAccount` object that 
+wraps the confidential identity `PublicKey` and a serialized and signed version of the `ChallengeResponse`.  The signing key 
+and challenge response are verified before registering the mapping in the `IdentityService`.
 
 ### ShareKeyFlow
 
-The inverse of `RequestKeyFlow` where the initiating node generates the `SignedData<OwnershipClaim>` and shares this with
-the flow counterparty who then registers `PublicKey` to `CordaX500Name` in their `IdentityService`.
+The inverse of `RequestKeyFlow` where the initiating node generates the `SignedKeyForAccount` and shares this with
+the flow counter-party who then registers `PublicKey` to `CordaX500Name` in their `IdentityService`.
 
 ### SyncKeyMappingsFlow
 
 This flow should be used when a node wishes to synchronise the `PublicKey` to `CordaX500Name` mapping of a confidential 
 identity with another node. This confidential participants of a transaction can be extracted from a given `WireTransaction` 
 if this is passed as a parameter to the flow. Alternatively, the node can bypass the need for a transaction and accept a
-list of `AnonymousParty` that it wishes to synchronize with another node. 
+list of `AbstractParty` that it wishes to synchronize with another node. 
+
+
+
