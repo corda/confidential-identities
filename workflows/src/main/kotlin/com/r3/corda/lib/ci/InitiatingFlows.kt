@@ -3,8 +3,6 @@ package com.r3.corda.lib.ci
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlow
 import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.RequestConfidentialIdentityFlowHandler
-import net.corda.confidential.identities.ShareKeyFlow
-import net.corda.confidential.identities.ShareKeyFlowHandler
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
@@ -73,27 +71,6 @@ class RequestKeyResponder(private val otherSession: FlowSession) : FlowLogic<Uni
     }
 }
 
-/**
- * Initiating version of [ShareKeyFlow].
- */
-@InitiatingFlow
-class ShareKeyInitiator(private val otherParty: Party, private val uuid: UUID) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        subFlow(ShareKeyFlow(initiateFlow(otherParty), uuid))
-    }
-}
-
-/**
- * Responder flow to [ShareKeyInitiator].
- */
-@InitiatedBy(ShareKeyInitiator::class)
-class ShareKeyResponder(private val otherSession: FlowSession) : FlowLogic<SignedKeyForAccount>() {
-    @Suspendable
-    override fun call(): SignedKeyForAccount {
-        return subFlow(ShareKeyFlowHandler(otherSession))
-    }
-}
 
 /**
  * Initiating version of [SyncKeyMappingFlow].

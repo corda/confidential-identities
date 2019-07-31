@@ -18,8 +18,10 @@ import java.util.*
 typealias ChallengeResponse = SecureHash.SHA256
 
 /**
- * Generates a fresh key pair and stores the mapping to the [UUID]. We sign over the [ChallengeResponse] using the new
- * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey] and signed data structure.
+ * Generates a fresh key pair and stores the mapping to the [UUID]. Generate a second [ChallengeResponse] parameter and
+ * concatenate this with the initial one that was sent. We sign over the concatenated [ChallengeResponse] using the new
+ * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey], signed data structure and additional
+ * [ChallengeResponse] parameter required for verification by the counter-party.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
  * @param challengeResponseParam The random number used to prevent replay attacks
@@ -29,8 +31,8 @@ typealias ChallengeResponse = SecureHash.SHA256
 @VisibleForTesting
 fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, uuid: UUID): SignedKeyForAccount {
     require(challengeResponseParam.sha256().size == 32)
+    // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
-    //TODO Confirm addition or concatenation
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
     val newKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, newKey)
@@ -40,8 +42,9 @@ fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponse
 }
 
 /**
- * Generates a fresh key pair and stores the mapping to the [UUID]. We sign over the [ChallengeResponse] using the new
- * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey] and signed data structure.
+ * Generate a second [ChallengeResponse] parameter and concatenate this with the initial one that was sent. We sign over
+ * the concatenated [ChallengeResponse] using the known [PublicKey]. The method returns the [SignedKeyForAccount] containing the [PublicKey],
+ * signed data structure and additional [ChallengeResponse] parameter required for verification by the counter-party.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
  * @param challengeResponseParam The random number used to prevent replay attacks
@@ -51,8 +54,8 @@ fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponse
 @VisibleForTesting
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, knownKey: PublicKey): SignedKeyForAccount {
     require(challengeResponseParam.sha256().size == 32)
+    // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
-    //TODO Confirm addition or concatenation
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
     val knownKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, knownKey)
     // Sign the challengeResponse with the newly generated key
@@ -78,29 +81,29 @@ fun verifySignedChallengeResponseSignature(signedKeyForAccount: SignedKeyForAcco
  * new [PublicKey] to be associated with the external ID. A known [PublicKey] can be provided to instruct the node to register
  * a mapping between that public key and the node party.
  *
- * @param _challengeResponseQuestion Arbitrary number that can only be used once in a cryptographic communication
+ * @param _challengeResponseParam Arbitrary number that can only be used once in a cryptographic communication
  * @param _uuid The external ID for a new key to be mapped to
  * @param knownKey The [PublicKey] to be mapped to the node party
  */
 @CordaSerializable
 class RequestKeyForAccount
-private constructor(private val _challengeResponseQuestion: ChallengeResponse, private val _uuid: UUID?, val knownKey: PublicKey?) {
-    constructor(challengeResponseQuestion: ChallengeResponse, knownKey: PublicKey) : this(challengeResponseQuestion, null, knownKey)
-    constructor(challengeResponseQuestion: ChallengeResponse, uuid: UUID) : this(challengeResponseQuestion, uuid, null)
+private constructor(private val _challengeResponseParam: ChallengeResponse, private val _uuid: UUID?, val knownKey: PublicKey?) {
+    constructor(challengeResponseParam: ChallengeResponse, knownKey: PublicKey) : this(challengeResponseParam, null, knownKey)
+    constructor(challengeResponseParam: ChallengeResponse, uuid: UUID) : this(challengeResponseParam, uuid, null)
 
     val uuid: UUID?
         get() = _uuid
 
-    val challengeResponseQuestion: ChallengeResponse
-        get() = _challengeResponseQuestion
+    val challengeResponseParam: ChallengeResponse
+        get() = _challengeResponseParam
 }
 
 /**
- * Object that holds a [PublicKey] and the serialized and signed [ChallengeResponse].
+ * Object that holds a [PublicKey], the serialized and signed [ChallengeResponse] and the additional [ChallengeResponse] parameter provided by a counter-party.
  *
  * @param publicKey The public key that was used to generate the signedChallengeResponse
  * @param signedChallengeResponse The serialized and signed [ChallengeResponse]
- * @param additionalChallengeResponseParam TODO
+ * @param additionalChallengeResponseParam The additional parameter provided by the key generating party to prevent signing over a malicious transaction
  */
 @CordaSerializable
 data class SignedKeyForAccount(val publicKey: PublicKey, val signedChallengeResponse: SignedData<ChallengeResponse>, val additionalChallengeResponseParam: ChallengeResponse)

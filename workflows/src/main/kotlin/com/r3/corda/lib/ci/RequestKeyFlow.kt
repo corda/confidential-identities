@@ -18,9 +18,10 @@ import java.util.*
  * pair for a given [UUID] and register the new key mapping, or a known [PublicKey] can be supplied to the flow which will register
  * a mapping between this key and the requesting party.
  *
- * The generation of the [SignedKeyForAccount] is delegated to the counter-party that signs the [ChallengeResponse] using the supplied
- * [PublicKey] and sends it back to the requesting node. The requesting node verifies the signature on the [ChallengeResponse] and verifies
- * the [ChallengeResponse] is the same as the one sent to the counter-party.
+ * The generation of the [SignedKeyForAccount] is delegated to the counter-party which concatenates the original [ChallengeResponse] with its own
+ * [ChallengeResponse] and signs over the concatenated hash before sending this value and the [PublicKey] and sends it back to the requesting node.
+ * The requesting node verifies the signature on the [ChallengeResponse] and verifies the concatenated [ChallengeResponse] is the same as the one received
+ * from the counter-party.
  */
 class RequestKeyFlow
 private constructor(
@@ -55,8 +56,8 @@ private constructor(
         verifySignedChallengeResponseSignature(signedKeyForAccount)
         progressTracker.currentStep = KEY_VERIFIED
 
-        progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
         // Ensure the hash of both challenge response parameters matches the received hashed function
+        progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
         val additionalParam = signedKeyForAccount.additionalChallengeResponseParam
         val resultOfHashedParameters = challengeResponseParam.hashConcat(additionalParam)
         require(resultOfHashedParameters == signedKeyForAccount.signedChallengeResponse.raw.deserialize())
@@ -86,9 +87,9 @@ class RequestKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<U
             it
         }
         if (request.uuid != null) {
-            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseQuestion, request.uuid!!))
+            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.uuid!!))
         } else if (request.knownKey != null) {
-            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseQuestion, request.knownKey))
+            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
         }
     }
 }

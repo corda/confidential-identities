@@ -71,16 +71,12 @@ a confidential identity. This mapping is required for the node operator to be ab
 
 The initiating node will generate a `ChallengeResponse` that is sent to the counter-party. The counter-party creates a
 new key pair for an external ID given by a `UUID`. Alternatively, a node can provide the owning key for 
-confidential identity that will be registered in the `IdentityService`. 
+confidential identity that will be registered in the `IdentityService`. The counter-party will generate an additional ``ChallengeResponse``
+parameter which is then concatenated with the first and signed over to prevent signing over a malicious transaction. 
 
 After node requests a new confidential key, the counter-party sends back the `SignedKeyForAccount` object that 
 wraps the confidential identity `PublicKey` and a serialized and signed version of the `ChallengeResponse`.  The signing key 
 and challenge response are verified before registering the mapping in the `IdentityService`.
-
-### ShareKeyFlow
-
-The inverse of `RequestKeyFlow` where the initiating node generates the `SignedKeyForAccount` and shares this with
-the flow counter-party who then registers `PublicKey` to `CordaX500Name` in their `IdentityService`.
 
 ### SyncKeyMappingsFlow
 
