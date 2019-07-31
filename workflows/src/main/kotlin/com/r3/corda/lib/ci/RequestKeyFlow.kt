@@ -47,8 +47,8 @@ private constructor(
     @Throws(FlowException::class)
     override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
-        val challengeResponseQuestion = SecureHash.randomSHA256()
-        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseQuestion, uuid) else RequestKeyForAccount(challengeResponseQuestion, key)
+        val challengeResponseParam = SecureHash.randomSHA256()
+        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseParam, uuid) else RequestKeyForAccount(challengeResponseParam, key)
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
@@ -56,8 +56,10 @@ private constructor(
         progressTracker.currentStep = KEY_VERIFIED
 
         progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
-        val challengeResponseAnswer = signedKeyForAccount.signedChallengeResponse.raw.deserialize()
-        require(challengeResponseQuestion == challengeResponseAnswer)
+        // Ensure the hash of both challenge response parameters matches the received hashed function
+        val additionalParam = signedKeyForAccount.additionalChallengeResponseParam
+        val resultOfHashedParameters = challengeResponseParam.hashConcat(additionalParam)
+        require(resultOfHashedParameters == signedKeyForAccount.signedChallengeResponse.raw.deserialize())
         progressTracker.currentStep = CHALLENGE_RESPONSE_VERIFIED
 
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party

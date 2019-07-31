@@ -22,18 +22,21 @@ typealias ChallengeResponse = SecureHash.SHA256
  * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey] and signed data structure.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
- * @param challengeResponseId The random number used to prevent replay attacks
+ * @param challengeResponseParam The random number used to prevent replay attacks
  * @param uuid The external ID to be associated with the new [PublicKey]
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponseId: ChallengeResponse, uuid: UUID): SignedKeyForAccount {
-    require(challengeResponseId.sha256().size == 32)
+fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, uuid: UUID): SignedKeyForAccount {
+    require(challengeResponseParam.sha256().size == 32)
+    val additionalParameter = SecureHash.randomSHA256()
+    //TODO Confirm addition or concatenation
+    val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
-    val newKeySig = serviceHub.keyManagementService.sign(challengeResponseId.serialize().hash.bytes, newKey)
+    val newKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, newKey)
     // Sign the challengeResponse with the newly generated key
-    val signedData = SignedData(challengeResponseId.serialize(), newKeySig)
-    return SignedKeyForAccount(newKey, signedData)
+    val signedData = SignedData(hashOfBothParameters.serialize(), newKeySig)
+    return SignedKeyForAccount(newKey, signedData, additionalParameter)
 }
 
 /**
@@ -41,17 +44,20 @@ fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponse
  * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey] and signed data structure.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
- * @param challengeResponseQuestion The random number used to prevent replay attacks
+ * @param challengeResponseParam The random number used to prevent replay attacks
  * @param knownKey The [PublicKey] to sign the challengeResponseId
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, challengeResponseQuestion: ChallengeResponse, knownKey: PublicKey): SignedKeyForAccount {
-    require(challengeResponseQuestion.sha256().size == 32)
-    val knownKeySig = serviceHub.keyManagementService.sign(challengeResponseQuestion.serialize().hash.bytes, knownKey)
+fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, knownKey: PublicKey): SignedKeyForAccount {
+    require(challengeResponseParam.sha256().size == 32)
+    val additionalParameter = SecureHash.randomSHA256()
+    //TODO Confirm addition or concatenation
+    val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
+    val knownKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, knownKey)
     // Sign the challengeResponse with the newly generated key
-    val signedData = SignedData(challengeResponseQuestion.serialize(), knownKeySig)
-    return SignedKeyForAccount(knownKey, signedData)
+    val signedData = SignedData(hashOfBothParameters.serialize(), knownKeySig)
+    return SignedKeyForAccount(knownKey, signedData, additionalParameter)
 }
 
 /**
@@ -94,8 +100,8 @@ private constructor(private val _challengeResponseQuestion: ChallengeResponse, p
  *
  * @param publicKey The public key that was used to generate the signedChallengeResponse
  * @param signedChallengeResponse The serialized and signed [ChallengeResponse]
+ * @param additionalChallengeResponseParam TODO
  */
 @CordaSerializable
-data class SignedKeyForAccount(val publicKey: PublicKey, val signedChallengeResponse: SignedData<ChallengeResponse>) {
-}
+data class SignedKeyForAccount(val publicKey: PublicKey, val signedChallengeResponse: SignedData<ChallengeResponse>, val additionalChallengeResponseParam: ChallengeResponse)
 
