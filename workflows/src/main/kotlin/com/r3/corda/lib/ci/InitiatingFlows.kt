@@ -38,6 +38,7 @@ class ConfidentialIdentityResponder(private val otherSession: FlowSession) : Flo
 /**
  * Initiating version of [RequestKeyFlow].
  */
+@StartableByRPC
 @InitiatingFlow
 class RequestKeyInitiator
 private constructor(

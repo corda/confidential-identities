@@ -98,8 +98,11 @@ class RequestKeyFlowTests {
                 IssueTokens(listOf(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey)))
         ).getOrThrow()
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
+
         // Verify Bob cannot resolve the CI before we create a signed mapping of the CI key
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
+
+        // Request a new key mapping for the CI
         bobNode.startFlow(RequestKeyInitiator(alice, confidentialIdentity.owningKey)).let {
             it.getOrThrow()
         }

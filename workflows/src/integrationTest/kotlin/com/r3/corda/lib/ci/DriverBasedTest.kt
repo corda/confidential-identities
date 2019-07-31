@@ -1,13 +1,14 @@
 package com.r3.corda.lib.ci
 
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
 import net.corda.client.rpc.CordaRPCClient
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
@@ -17,67 +18,63 @@ import net.corda.testing.driver.DriverDSL
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
+import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.User
 import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class DriverBasedTest {
 
     @Test
-    fun `WIP`() = withDriver {
-        val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
-        val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
-        val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
+    fun `request a key mapping for a confidential identity`() = withDriver {
+            val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
+            val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
+            val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
 
-        val (nodeA, nodeB, nodeC) = listOf(
-                startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
-                startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
-                startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
-        ).waitForAll()
-
+            val (nodeA, nodeB, nodeC) = listOf(
+                    startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
+                    startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
+                    startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
+            ).waitForAll()
 
         verifyNodesResolve(nodeA, nodeB, nodeC)
 
-        // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anon = nodeA.rpc.startFlow(::ConfidentialIdentityInitiator, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow()
+        // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
+        val anon = nodeC.rpc.startFlow(::ConfidentialIdentityInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
 
-        val token = 1000 of GBP issuedBy nodeA.nodeInfo.singleIdentity() heldBy nodeC.nodeInfo.singleIdentity()
-        val issueTx  = nodeA.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList<Party>()).returnValue.getOrThrow()
-//        {
-//            IssueTokens(1000 of USD issuedBy nodeA.nodeInfo.singleIdentity() heldBy anonParty)
-//        }.returnValue.getOrThrow()
-//        val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
-//        assertNull(proxyB.wellKnownPartyFromAnonymous(ci))
-//        println(issueTx.tx.outputs.map { it.data })
+        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anon.owningKey)
+        val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
 
-//        transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
-        /**
-        val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken<TokenType>>().single().holder
+        val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
 
-        assertNull(bobNode.database.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
+        // Verify Bob cannot resolve the CI before we create a key mapping
+        assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(ci))
 
-        // Run the flow to sync up the identities
-        aliceNode.services.startFlow(SyncKeyMappingInitiator(bob, issueTx.tx)).let {
-        mockNet.waitQuiescent()
-        it.resultFuture.getOrThrow()
-        }
+        // Request a new key mapping for the CI
+        nodeB.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity(), ci.owningKey).let {
+            it.returnValue
+        }.getOrThrow()
 
-        val expected = aliceNode.database.transaction {
-        aliceNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
-        }
-        val actual = bobNode.database.transaction {
-        bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
-        }
+        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
+
+        val actual = nodeB.rpc.wellKnownPartyFromAnonymous(ci)
+
         assertEquals(expected, actual)
-         */
     }
 
     // Runs a test inside the Driver DSL, which provides useful functions for starting nodes, etc.
     private fun withDriver(test: DriverDSL.() -> Unit) = driver(
         DriverParameters(
             isDebug = true,
-            startNodesInProcess = true //SET TO FALSE UNLESS YOU WANT TO FEEL CORDA'S WRATH
+            startNodesInProcess = true,
+            cordappsForAllNodes = listOf(
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+            )
         )
     ) { test() }
 
