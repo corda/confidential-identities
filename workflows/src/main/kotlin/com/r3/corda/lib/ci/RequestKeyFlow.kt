@@ -77,7 +77,7 @@ private constructor(
     }
 }
 
-class RequestKeyFlowHandler(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val request = otherSession.receive<RequestKeyForAccount>().unwrap {

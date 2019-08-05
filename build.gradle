@@ -1,6 +1,7 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
+        //TODO change before merge
         corda_release_version = '5.0-SNAPSHOT-WILLH'
         corda_gradle_plugins_version = '4.0.42'
         kotlin_version = '1.2.71'
@@ -12,7 +13,7 @@ buildscript {
         tokens_release_group='com.r3.corda.lib.tokens'
         tokens_sdk_version='1.0'
         confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0"
+        confidential_id_release_version = "1.0-SNAPSHOT"
     }
 
     repositories {
@@ -20,8 +21,8 @@ buildscript {
         mavenCentral()
         mavenLocal()
         maven { url 'https://jitpack.io' }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
+        maven { url "https://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
+        maven { url "https://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }

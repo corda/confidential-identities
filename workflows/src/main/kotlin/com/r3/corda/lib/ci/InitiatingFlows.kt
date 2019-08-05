@@ -68,7 +68,7 @@ private constructor(
 class RequestKeyResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        subFlow(RequestKeyFlowHandler(otherSession))
+        subFlow(ProvideKeyFlow(otherSession))
     }
 }
 

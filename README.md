@@ -86,4 +86,9 @@ if this is passed as a parameter to the flow. Alternatively, the node can bypass
 list of `AbstractParty` that it wishes to synchronize with another node. 
 
 
+### Security protocol
+
+<p align="center">
+<<a href="https://ibb.co/bN1ndpj"><img src="https://i.ibb.co/nQrSkhq/ci-flow-security-protocol.png" alt="ci-flow-security-protocol" border="0"></a>
+</p>
 
