@@ -42,7 +42,7 @@ class DriverBasedTest {
         verifyNodesResolve(nodeA, nodeB, nodeC)
 
         // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anon = nodeC.rpc.startFlow(::ConfidentialIdentityInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
+        val anon = nodeC.rpc.startFlow(::RequestConfidentialIdentity, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
 
         val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anon.owningKey)
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()

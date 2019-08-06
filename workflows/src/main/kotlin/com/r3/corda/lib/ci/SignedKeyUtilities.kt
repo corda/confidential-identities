@@ -1,9 +1,14 @@
 package com.r3.corda.lib.ci
 
 import net.corda.core.CordaInternal
+import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignedData
-import net.corda.core.crypto.sha256
+import net.corda.core.crypto.verify
+import net.corda.core.flows.FlowException
+import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
+import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.CordaSerializable
@@ -30,7 +35,6 @@ typealias ChallengeResponse = SecureHash.SHA256
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, uuid: UUID): SignedKeyForAccount {
-    require(challengeResponseParam.sha256().size == 32)
     // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
@@ -53,7 +57,6 @@ fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponse
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, knownKey: PublicKey): SignedKeyForAccount {
-    require(challengeResponseParam.sha256().size == 32)
     // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
@@ -77,26 +80,35 @@ fun verifySignedChallengeResponseSignature(signedKeyForAccount: SignedKeyForAcco
 }
 
 /**
- * Object that holds parameters that drive the behaviour of flows that consume it. The [UUID] can be provided to generate a
- * new [PublicKey] to be associated with the external ID. A known [PublicKey] can be provided to instruct the node to register
- * a mapping between that public key and the node party.
- *
- * @param _challengeResponseParam Arbitrary number that can only be used once in a cryptographic communication
- * @param _uuid The external ID for a new key to be mapped to
- * @param knownKey The [PublicKey] to be mapped to the node party
+ * Parent class of all classes that can be shared between flow sessions when requesting [PublicKey] to [Party] mappings in
+ * the context of confidential identities.
  */
 @CordaSerializable
-class RequestKeyForAccount
-private constructor(private val _challengeResponseParam: ChallengeResponse, private val _uuid: UUID?, val knownKey: PublicKey?) {
-    constructor(challengeResponseParam: ChallengeResponse, knownKey: PublicKey) : this(challengeResponseParam, null, knownKey)
-    constructor(challengeResponseParam: ChallengeResponse, uuid: UUID) : this(challengeResponseParam, uuid, null)
+sealed class SendRequestForKeyMapping
 
-    val uuid: UUID?
-        get() = _uuid
+/**
+ * Object to be shared between flow sessions when a new [PublicKey] is required to be registered against a given externalId
+ * provided by the [UUID].
+ *
+ * @param challengeResponseParam Arbitrary number that can only be used once in a cryptographic communication
+ * @param externalId The external ID for a new key to be mapped to
+ */
+data class RequestKeyForUUID(val challengeResponseParam: ChallengeResponse, val externalId: UUID) : SendRequestForKeyMapping()
 
-    val challengeResponseParam: ChallengeResponse
-        get() = _challengeResponseParam
-}
+/**
+ * Object to be shared between flow sessions when a node wants to register a mapping between a known [PublicKey] and a [Party].
+ *
+ * @param challengeResponseParam Arbitrary number that can only be used once in a cryptographic communication
+ * @param knownKey The [PublicKey] to be mapped to the node party
+ */
+data class RequestForKnownKey(val challengeResponseParam: ChallengeResponse, val knownKey: PublicKey) : SendRequestForKeyMapping()
+
+/**
+ * Object to be shared between flow sessions when a node wants to request a new [PublicKey] to be mapped against a known [Party].
+ *
+ * @param challengeResponseParam Arbitrary number that can only be used once in a cryptographic communication
+ */
+data class RequestFreshKey(val challengeResponseParam: ChallengeResponse) : SendRequestForKeyMapping()
 
 /**
  * Object that holds a [PublicKey], the serialized and signed [ChallengeResponse] and the additional [ChallengeResponse] parameter provided by a counter-party.
@@ -107,4 +119,3 @@ private constructor(private val _challengeResponseParam: ChallengeResponse, priv
  */
 @CordaSerializable
 data class SignedKeyForAccount(val publicKey: PublicKey, val signedChallengeResponse: SignedData<ChallengeResponse>, val additionalChallengeResponseParam: ChallengeResponse)
-

@@ -69,7 +69,26 @@ class RequestKeyFlowTests {
     }
 
     @Test
-    fun `request new key from another party`() {
+    fun `request a new key`() {
+        // Alice requests that bob generates a new key for an account
+        val newKey = aliceNode.startFlow(RequestKeyInitiator(bob)).let {
+            it.getOrThrow()
+        }.publicKey
+
+        // Bob has the newly generated key as well as the owning key
+        val bobKeys = bobNode.services.keyManagementService.keys
+        val aliceKeys = aliceNode.services.keyManagementService.keys
+        assertThat(bobKeys).hasSize(2)
+        assertThat(aliceKeys).hasSize(1)
+
+        assertThat(bobNode.services.keyManagementService.keys).contains(newKey)
+
+        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(AnonymousParty(newKey))
+        assertThat(resolvedBobParty).isEqualTo(bob)
+    }
+
+    @Test
+    fun `request new key with a uuid provided`() {
         // Alice requests that bob generates a new key for an account
         val newKey = aliceNode.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).let {
             it.getOrThrow()
@@ -90,9 +109,9 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = charlieNode.startFlow(ConfidentialIdentityInitiator(alice)).let {
+        val anonymousParty = AnonymousParty(charlieNode.startFlow(RequestKeyInitiator(alice)).let{
             it.getOrThrow()
-        }
+        }.publicKey)
 
         val issueTx = charlieNode.startFlow(
                 IssueTokens(listOf(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey)))

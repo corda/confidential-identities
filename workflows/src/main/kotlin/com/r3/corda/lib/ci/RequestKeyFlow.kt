@@ -26,10 +26,11 @@ import java.util.*
 class RequestKeyFlow
 private constructor(
         private val session: FlowSession,
-        private val uuid: UUID,
+        private val uuid: UUID?,
         private val key: PublicKey?) : FlowLogic<SignedKeyForAccount>() {
     constructor(session: FlowSession, uuid: UUID) : this(session, uuid, null)
     constructor(session: FlowSession, key: PublicKey) : this(session, UniqueIdentifier().id, key)
+    constructor(session: FlowSession) : this(session, null, null)
 
     companion object {
         object REQUESTING_KEY : ProgressTracker.Step("Requesting a public key")
@@ -49,7 +50,13 @@ private constructor(
     override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
-        val requestKeyForAccount = if (key == null) RequestKeyForAccount(challengeResponseParam, uuid) else RequestKeyForAccount(challengeResponseParam, key)
+        val requestKeyForAccount = if (key == null && uuid != null ) {
+            RequestKeyForUUID(challengeResponseParam, uuid)
+        } else if (key != null) {
+            RequestForKnownKey(challengeResponseParam, key)
+        } else {
+            RequestFreshKey(challengeResponseParam)
+        }
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
@@ -80,16 +87,14 @@ private constructor(
 class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val request = otherSession.receive<RequestKeyForAccount>().unwrap {
-            check((it.uuid != null) xor (it.knownKey != null)) {
-                "RequestKeyForAccount request should provide either a uuid or public key"
+        val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
+        when (request) {
+            is RequestKeyForUUID -> otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId))
+            is RequestForKnownKey -> otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
+            is RequestFreshKey -> {
+                val newKey = serviceHub.keyManagementService.freshKey()
+                otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, newKey))
             }
-            it
-        }
-        if (request.uuid != null) {
-            otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.uuid!!))
-        } else if (request.knownKey != null) {
-            otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
         }
     }
 }

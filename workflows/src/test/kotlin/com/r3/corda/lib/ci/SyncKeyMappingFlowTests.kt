@@ -74,10 +74,11 @@ class SyncKeyMappingFlowTests {
     @Test
     fun `sync the key mapping between two parties in a transaction`() {
         // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonymousParty = aliceNode.startFlow(ConfidentialIdentityInitiator(charlie)).let {
+        val anonymousParty = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(charlie)).let { it ->
             it.getOrThrow()
-        }
-        val issueTx = aliceNode.startFlow(IssueTokens(listOf(1000 of USD issuedBy alice heldBy AnonymousParty(anonymousParty.owningKey)))).let {
+        }.publicKey)
+
+        val issueTx = aliceNode.startFlow(IssueTokens(listOf(1000 of USD issuedBy alice heldBy anonymousParty))).let {
             it.getOrThrow()
         }
 
@@ -102,13 +103,13 @@ class SyncKeyMappingFlowTests {
 
     @Test
     fun `sync identities without a transaction`() {
-        val anonymousAlice = AnonymousParty(aliceNode.startFlow(ConfidentialIdentityInitiator(alice)).let {
+        val anonymousAlice = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(alice)).let {
             it.getOrThrow()
-        }.owningKey)
+        }.publicKey)
 
-        val anonymousCharlie = AnonymousParty(aliceNode.startFlow(ConfidentialIdentityInitiator(charlie)).let {
+        val anonymousCharlie = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(charlie)).let {
             it.getOrThrow()
-        }.owningKey)
+        }.publicKey)
 
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousAlice) })
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousCharlie) })
