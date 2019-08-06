@@ -1,14 +1,9 @@
 package com.r3.corda.lib.ci
 
 import net.corda.core.CordaInternal
-import net.corda.core.crypto.DigitalSignature
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignedData
-import net.corda.core.crypto.verify
-import net.corda.core.flows.FlowException
-import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.CordaSerializable
@@ -23,10 +18,8 @@ import java.util.*
 typealias ChallengeResponse = SecureHash.SHA256
 
 /**
- * Generates a fresh key pair and stores the mapping to the [UUID]. Generate a second [ChallengeResponse] parameter and
- * concatenate this with the initial one that was sent. We sign over the concatenated [ChallengeResponse] using the new
- * [PublicKey]. The method returns the [SignedKeyForAccount] containing the new [PublicKey], signed data structure and additional
- * [ChallengeResponse] parameter required for verification by the counter-party.
+ * Generates a fresh key pair and stores the mapping to the [UUID]. This key is used construct the [SignedKeyForAccount] containing the new [PublicKey],
+ * signed data structure and additional [ChallengeResponse] parameter required for verification by the counter-party.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
  * @param challengeResponseParam The random number used to prevent replay attacks
@@ -35,20 +28,13 @@ typealias ChallengeResponse = SecureHash.SHA256
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, uuid: UUID): SignedKeyForAccount {
-    // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
-    val additionalParameter = SecureHash.randomSHA256()
-    val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
     val newKey = serviceHub.keyManagementService.freshKey(uuid)
-    val newKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, newKey)
-    // Sign the challengeResponse with the newly generated key
-    val signedData = SignedData(hashOfBothParameters.serialize(), newKeySig)
-    return SignedKeyForAccount(newKey, signedData, additionalParameter)
+    return concatChallengeResponseAndSign(serviceHub, challengeResponseParam, newKey)
 }
 
 /**
- * Generate a second [ChallengeResponse] parameter and concatenate this with the initial one that was sent. We sign over
- * the concatenated [ChallengeResponse] using the known [PublicKey]. The method returns the [SignedKeyForAccount] containing the [PublicKey],
- * signed data structure and additional [ChallengeResponse] parameter required for verification by the counter-party.
+ * Returns the [SignedKeyForAccount] containing the known [PublicKey], signed data structure and additional [ChallengeResponse]
+ * parameter required for verification by the counter-party.
  *
  * @param serviceHub The [ServiceHub] of the node which requests a new public key
  * @param challengeResponseParam The random number used to prevent replay attacks
@@ -57,13 +43,22 @@ fun createSignedOwnershipClaimFromUUID(serviceHub: ServiceHub, challengeResponse
 @CordaInternal
 @VisibleForTesting
 fun createSignedOwnershipClaimFromKnownKey(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, knownKey: PublicKey): SignedKeyForAccount {
+    return concatChallengeResponseAndSign(serviceHub, challengeResponseParam, knownKey)
+}
+
+/**
+ * Generate a second [ChallengeResponse] parameter and concatenate this with the initial one that was sent. We sign over
+ * the concatenated [ChallengeResponse] using the new [PublicKey]. The method returns the [SignedKeyForAccount] containing
+ * the new [PublicKey], signed data structure and additional [ChallengeResponse] parameter.
+ */
+private fun concatChallengeResponseAndSign(serviceHub: ServiceHub, challengeResponseParam: ChallengeResponse, key: PublicKey): SignedKeyForAccount {
     // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
-    val knownKeySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, knownKey)
+    val keySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, key)
     // Sign the challengeResponse with the newly generated key
-    val signedData = SignedData(hashOfBothParameters.serialize(), knownKeySig)
-    return SignedKeyForAccount(knownKey, signedData, additionalParameter)
+    val signedData = SignedData(hashOfBothParameters.serialize(), keySig)
+    return SignedKeyForAccount(key, signedData, additionalParameter)
 }
 
 /**
