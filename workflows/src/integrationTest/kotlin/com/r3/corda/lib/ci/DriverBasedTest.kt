@@ -7,10 +7,13 @@ import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
 import net.corda.client.rpc.CordaRPCClient
+import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.messaging.startFlow
+import net.corda.core.toFuture
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
 import net.corda.testing.core.*
@@ -21,6 +24,7 @@ import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.User
 import org.junit.Test
+import rx.Observable
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -29,22 +33,21 @@ class DriverBasedTest {
 
     @Test
     fun `request a key mapping for a confidential identity`() = withDriver {
-            val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
-            val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
-            val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
-
-            val (nodeA, nodeB, nodeC) = listOf(
-                    startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
-                    startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
-                    startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
-            ).waitForAll()
+        val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
+        val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
+        val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
+        val (nodeA, nodeB, nodeC) = listOf(
+                startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
+                startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
+                startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
+        ).waitForAll()
 
         verifyNodesResolve(nodeA, nodeB, nodeC)
 
         // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anon = nodeC.rpc.startFlow(::RequestConfidentialIdentity, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
+        val anonKey = nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
 
-        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anon.owningKey)
+        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
 
         val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
@@ -60,6 +63,93 @@ class DriverBasedTest {
         val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
 
         val actual = nodeB.rpc.wellKnownPartyFromAnonymous(ci)
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun `sync confidential identities within a transaction`() = withDriver {
+        val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
+        val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
+        val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
+
+        val (nodeA, nodeB, nodeC) = listOf(
+                startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
+                startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
+                startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
+        ).waitForAll()
+
+        // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
+        val anonKey = nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
+
+        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
+        val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
+
+        val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
+
+        assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(ci))
+
+        val idFuture = nodeC.rpc.stateMachinesFeed().updates.filter {
+            if (it is StateMachineUpdate.Added) {
+                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingInitiator::class.java.name
+            } else {
+                false
+            }
+        }.toFuture()
+
+        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeA.nodeInfo.singleIdentity(), issueTx.tx)
+        //TODO this guy hangs
+        val id = idFuture.getOrThrow().id
+        val check = nodeC.rpc.stateMachinesFeed().updates.filter { it.id == id }
+        val anon = anonFuture.returnValue.getOrThrow()
+        check.toFuture().getOrThrow()
+
+        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
+        val actual = nodeB.rpc.wellKnownPartyFromAnonymous(ci)
+
+        assertEquals(expected, actual)
+    }
+
+
+    @Test
+    fun `sync list of confidential identities`() = withDriver {
+        val aUser = User("aUser", "testPassword1", permissions = setOf(Permissions.all()))
+        val bUser = User("bUser", "testPassword2", permissions = setOf(Permissions.all()))
+        val cUser = User("cUser", "testPassword3", permissions = setOf(Permissions.all()))
+
+        val (nodeA, nodeB, nodeC) = listOf(
+                startNode(providedName = ALICE_NAME, rpcUsers = listOf(aUser)),
+                startNode(providedName = BOB_NAME, rpcUsers = listOf(bUser)),
+                startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
+        ).waitForAll()
+
+        // Charlie creates two new confidential identities
+        val anonymousAlice = AnonymousParty(nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
+        val anonymousCharlie = AnonymousParty(nodeC.rpc.startFlow(::RequestKeyInitiator, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
+
+        assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice))
+        assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie))
+
+        val idFuture = nodeC.rpc.stateMachinesFeed().updates.filter {
+            if (it is StateMachineUpdate.Added) {
+                it.stateMachineInfo.flowLogicClassName == RequestKeyFlow::class.java.name
+            } else {
+                false
+            }
+        }.toFuture()
+
+
+        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie)).returnValue
+        //TODO this guy hangs
+        val id = idFuture.getOrThrow().id
+        val check = nodeC.rpc.stateMachinesFeed().updates.toCompletable().await()
+////        .toBlocking()
+//                .filter { it.id == id }
+        val anon = anonFuture.getOrThrow()
+//        check.toFuture().getOrThrow()
+
+        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(anonymousAlice)
+        val actual = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie)
 
         assertEquals(expected, actual)
     }

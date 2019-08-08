@@ -50,14 +50,14 @@ private constructor(
     override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
-        val requestKeyForAccount = if (key == null && uuid != null ) {
+        val requestKey = if (key == null && uuid != null ) {
             RequestKeyForUUID(challengeResponseParam, uuid)
         } else if (key != null) {
             RequestForKnownKey(challengeResponseParam, key)
         } else {
             RequestFreshKey(challengeResponseParam)
         }
-        val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKeyForAccount).unwrap { it }
+        val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
         verifySignedChallengeResponseSignature(signedKeyForAccount)

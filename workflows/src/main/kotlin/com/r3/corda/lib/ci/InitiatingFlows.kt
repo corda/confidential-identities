@@ -53,6 +53,7 @@ class RequestKeyResponder(private val otherSession: FlowSession) : FlowLogic<Uni
  * Initiating version of [SyncKeyMappingFlow].
  */
 @InitiatingFlow
+@StartableByRPC
 class SyncKeyMappingInitiator
 private constructor(
         private val otherParty: Party,
