@@ -79,7 +79,6 @@ class DriverBasedTest {
                 startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
         ).waitForAll()
 
-        // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
         val anonKey = nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
 
         val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
@@ -98,10 +97,9 @@ class DriverBasedTest {
         }.toFuture()
 
         val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeA.nodeInfo.singleIdentity(), issueTx.tx)
-        //TODO this guy hangs
         val id = idFuture.getOrThrow().id
         val check = nodeC.rpc.stateMachinesFeed().updates.filter { it.id == id }
-        val anon = anonFuture.returnValue.getOrThrow()
+        anonFuture.returnValue.getOrThrow()
         check.toFuture().getOrThrow()
 
         val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
@@ -132,26 +130,37 @@ class DriverBasedTest {
 
         val idFuture = nodeC.rpc.stateMachinesFeed().updates.filter {
             if (it is StateMachineUpdate.Added) {
-                it.stateMachineInfo.flowLogicClassName == RequestKeyFlow::class.java.name
+                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingInitiator::class.java.name
             } else {
                 false
             }
         }.toFuture()
 
 
-        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie)).returnValue
-        //TODO this guy hangs
+        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie))
         val id = idFuture.getOrThrow().id
-        val check = nodeC.rpc.stateMachinesFeed().updates.toCompletable().await()
-////        .toBlocking()
-//                .filter { it.id == id }
-        val anon = anonFuture.getOrThrow()
-//        check.toFuture().getOrThrow()
 
-        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(anonymousAlice)
-        val actual = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie)
+        val removedId = nodeC.rpc.stateMachinesFeed().updates.filter {
+            if (it is StateMachineUpdate.Removed) {
+                it.id == id
+            } else {
+                false
+            }
+        }.toFuture()
 
-        assertEquals(expected, actual)
+        val isRemoved = removedId.getOrThrow()
+        val check = nodeC.rpc.stateMachinesFeed().updates.filter { it.id == isRemoved.id }
+        anonFuture.returnValue.getOrThrow()
+        check.toFuture().getOrThrow()
+
+        val expectedAlice = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice)
+        val expectedCharlie = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie)
+
+        println("AnonAlice: " + anonymousAlice.owningKey)
+        println("AnonCharlie: " + anonymousCharlie.owningKey)
+
+        assertEquals(nodeA.nodeInfo.singleIdentity(), expectedAlice)
+        assertEquals(nodeC.nodeInfo.singleIdentity(), expectedCharlie)
     }
 
     // Runs a test inside the Driver DSL, which provides useful functions for starting nodes, etc.
