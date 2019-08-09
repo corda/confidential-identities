@@ -106,7 +106,6 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
 
         mapConfidentialKeyToParty.forEach {
             subFlow(RequestKeyInitiator(it.value, it.key))
-            println("SyncKeyFlow: " + it.key)
         }
         progressTracker.currentStep = IDENTITIES_SYNCHRONISED
     }

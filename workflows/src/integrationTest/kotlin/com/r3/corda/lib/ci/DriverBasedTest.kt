@@ -23,6 +23,7 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.User
+import org.junit.After
 import org.junit.Test
 import rx.Observable
 import java.util.concurrent.Future
@@ -60,7 +61,7 @@ class DriverBasedTest {
             it.returnValue
         }.getOrThrow()
 
-        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
+        val expected = nodeC.rpc.wellKnownPartyFromAnonymous(ci)
 
         val actual = nodeB.rpc.wellKnownPartyFromAnonymous(ci)
 
@@ -128,9 +129,9 @@ class DriverBasedTest {
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice))
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie))
 
-        val idFuture = nodeC.rpc.stateMachinesFeed().updates.filter {
+        val idFuture = nodeB.rpc.stateMachinesFeed().updates.filter {
             if (it is StateMachineUpdate.Added) {
-                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingInitiator::class.java.name
+                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingResponder::class.java.name
             } else {
                 false
             }
@@ -140,7 +141,7 @@ class DriverBasedTest {
         val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie))
         val id = idFuture.getOrThrow().id
 
-        val removedId = nodeC.rpc.stateMachinesFeed().updates.filter {
+        val removedId = nodeB.rpc.stateMachinesFeed().updates.filter {
             if (it is StateMachineUpdate.Removed) {
                 it.id == id
             } else {
@@ -148,16 +149,11 @@ class DriverBasedTest {
             }
         }.toFuture()
 
-        val isRemoved = removedId.getOrThrow()
-        val check = nodeC.rpc.stateMachinesFeed().updates.filter { it.id == isRemoved.id }
         anonFuture.returnValue.getOrThrow()
-        check.toFuture().getOrThrow()
+        removedId.getOrThrow()
 
         val expectedAlice = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice)
         val expectedCharlie = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie)
-
-        println("AnonAlice: " + anonymousAlice.owningKey)
-        println("AnonCharlie: " + anonymousCharlie.owningKey)
 
         assertEquals(nodeA.nodeInfo.singleIdentity(), expectedAlice)
         assertEquals(nodeC.nodeInfo.singleIdentity(), expectedCharlie)
@@ -167,7 +163,7 @@ class DriverBasedTest {
     private fun withDriver(test: DriverDSL.() -> Unit) = driver(
         DriverParameters(
             isDebug = true,
-            startNodesInProcess = true,
+//            startNodesInProcess = true,
             cordappsForAllNodes = listOf(
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
@@ -183,16 +179,6 @@ class DriverBasedTest {
     // Resolves a list of futures to a list of the promised values.
     private fun <T> List<Future<T>>.waitForAll(): List<T> = map { it.getOrThrow() }
 
-    // Starts multiple nodes simultaneously, then waits for them all to be ready.
-    private fun DriverDSL.startNodes(vararg identities: TestIdentity) = identities
-        .map { startNode(providedName = it.name) }
-        .waitForAll()
-
-    private fun createClientProxy(node: NodeHandle, user: User): CordaRPCOps {
-        val client = CordaRPCClient(node.rpcAddress)
-        return client.start(user.username, user.password).proxy
-    }
-
     private fun verifyNodesResolve(nodeA: NodeHandle, nodeB: NodeHandle, nodeC: NodeHandle) {
         assertEquals(BOB_NAME, nodeA.resolveName(BOB_NAME))
         assertEquals(CHARLIE_NAME, nodeA.resolveName(CHARLIE_NAME))
@@ -202,5 +188,11 @@ class DriverBasedTest {
 
         assertEquals(ALICE_NAME, nodeC.resolveName(ALICE_NAME))
         assertEquals(BOB_NAME, nodeC.resolveName(BOB_NAME))
+    }
+
+    private fun stopNodes(nodeA: NodeHandle, nodeB: NodeHandle, nodeC: NodeHandle) {
+        nodeA.stop()
+        nodeB.stop()
+        nodeC.stop()
     }
 }
