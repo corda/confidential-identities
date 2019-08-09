@@ -6,11 +6,11 @@ import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
-import net.corda.client.rpc.CordaRPCClient
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.messaging.FlowHandle
 import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.messaging.startFlow
 import net.corda.core.toFuture
@@ -23,9 +23,7 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.User
-import org.junit.After
 import org.junit.Test
-import rx.Observable
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -89,21 +87,11 @@ class DriverBasedTest {
 
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(ci))
 
-        val idFuture = nodeC.rpc.stateMachinesFeed().updates.filter {
-            if (it is StateMachineUpdate.Added) {
-                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingInitiator::class.java.name
-            } else {
-                false
-            }
-        }.toFuture()
+        val idFuture = watchForFlowAdded(nodeB, SyncKeyMappingResponder::class.java.name)
+        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), issueTx.tx)
+        waitForFlowToBeRemovedThenComplete(idFuture, anonFuture, nodeB)
 
-        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeA.nodeInfo.singleIdentity(), issueTx.tx)
-        val id = idFuture.getOrThrow().id
-        val check = nodeC.rpc.stateMachinesFeed().updates.filter { it.id == id }
-        anonFuture.returnValue.getOrThrow()
-        check.toFuture().getOrThrow()
-
-        val expected = nodeA.rpc.wellKnownPartyFromAnonymous(ci)
+        val expected = nodeC.rpc.wellKnownPartyFromAnonymous(ci)
         val actual = nodeB.rpc.wellKnownPartyFromAnonymous(ci)
 
         assertEquals(expected, actual)
@@ -129,28 +117,9 @@ class DriverBasedTest {
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice))
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie))
 
-        val idFuture = nodeB.rpc.stateMachinesFeed().updates.filter {
-            if (it is StateMachineUpdate.Added) {
-                it.stateMachineInfo.flowLogicClassName == SyncKeyMappingResponder::class.java.name
-            } else {
-                false
-            }
-        }.toFuture()
-
-
-        val anonFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie))
-        val id = idFuture.getOrThrow().id
-
-        val removedId = nodeB.rpc.stateMachinesFeed().updates.filter {
-            if (it is StateMachineUpdate.Removed) {
-                it.id == id
-            } else {
-                false
-            }
-        }.toFuture()
-
-        anonFuture.returnValue.getOrThrow()
-        removedId.getOrThrow()
+        val idFuture = watchForFlowAdded(nodeB, SyncKeyMappingResponder::class.java.name)
+        val flowFuture = nodeC.rpc.startFlow(::SyncKeyMappingInitiator, nodeB.nodeInfo.singleIdentity(), listOf(anonymousAlice, anonymousCharlie))
+        waitForFlowToBeRemovedThenComplete(idFuture, flowFuture, nodeB)
 
         val expectedAlice = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice)
         val expectedCharlie = nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie)
