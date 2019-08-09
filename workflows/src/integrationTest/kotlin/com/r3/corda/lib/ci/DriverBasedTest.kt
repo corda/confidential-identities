@@ -163,7 +163,6 @@ class DriverBasedTest {
     private fun withDriver(test: DriverDSL.() -> Unit) = driver(
         DriverParameters(
             isDebug = true,
-//            startNodesInProcess = true,
             cordappsForAllNodes = listOf(
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
@@ -188,11 +187,5 @@ class DriverBasedTest {
 
         assertEquals(ALICE_NAME, nodeC.resolveName(ALICE_NAME))
         assertEquals(BOB_NAME, nodeC.resolveName(BOB_NAME))
-    }
-
-    private fun stopNodes(nodeA: NodeHandle, nodeB: NodeHandle, nodeC: NodeHandle) {
-        nodeA.stop()
-        nodeB.stop()
-        nodeC.stop()
     }
 }
