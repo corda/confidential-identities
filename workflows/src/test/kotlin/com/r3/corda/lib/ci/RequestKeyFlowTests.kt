@@ -71,7 +71,7 @@ class RequestKeyFlowTests {
     @Test
     fun `request a new key`() {
         // Alice requests that bob generates a new key for an account
-        val newKey = aliceNode.startFlow(RequestKeyInitiator(bob)).let {
+        val newKey = aliceNode.startFlow(RequestKey(bob)).let {
             it.getOrThrow()
         }.publicKey
 
@@ -90,7 +90,7 @@ class RequestKeyFlowTests {
     @Test
     fun `request new key with a uuid provided`() {
         // Alice requests that bob generates a new key for an account
-        val newKey = aliceNode.startFlow(RequestKeyInitiator(bob, UUID.randomUUID())).let {
+        val newKey = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).let {
             it.getOrThrow()
         }.publicKey
 
@@ -109,7 +109,7 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = AnonymousParty(charlieNode.startFlow(RequestKeyInitiator(alice)).let{
+        val anonymousParty = AnonymousParty(charlieNode.startFlow(RequestKey(alice)).let{
             it.getOrThrow()
         }.publicKey)
 
@@ -122,7 +122,7 @@ class RequestKeyFlowTests {
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
         // Request a new key mapping for the CI
-        bobNode.startFlow(RequestKeyInitiator(alice, confidentialIdentity.owningKey)).let {
+        bobNode.startFlow(VerifyAndAddKey(alice, confidentialIdentity.owningKey)).let {
             it.getOrThrow()
         }
 

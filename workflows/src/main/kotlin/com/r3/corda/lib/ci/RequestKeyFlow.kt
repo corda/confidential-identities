@@ -50,13 +50,13 @@ private constructor(
     override fun call(): SignedKeyForAccount {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
-        val requestKey = if (key == null && uuid != null ) {
-            RequestKeyForUUID(challengeResponseParam, uuid)
-        } else if (key != null) {
-            RequestForKnownKey(challengeResponseParam, key)
-        } else {
-            RequestFreshKey(challengeResponseParam)
+
+        val requestKey = when {
+            key == null && uuid != null -> RequestKeyForUUID(challengeResponseParam, uuid)
+            key != null -> RequestForKnownKey(challengeResponseParam, key)
+            else -> RequestFreshKey(challengeResponseParam)
         }
+
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
 
         progressTracker.currentStep = VERIFYING_KEY
@@ -84,6 +84,9 @@ private constructor(
     }
 }
 
+/**
+ * Responder flow to [RequestKeyFlow].
+ */
 class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {

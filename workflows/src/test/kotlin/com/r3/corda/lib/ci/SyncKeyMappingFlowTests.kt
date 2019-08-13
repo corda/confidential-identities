@@ -74,7 +74,7 @@ class SyncKeyMappingFlowTests {
     @Test
     fun `sync the key mapping between two parties in a transaction`() {
         // Alice issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonymousParty = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(charlie)).let { it ->
+        val anonymousParty = AnonymousParty(aliceNode.startFlow(RequestKey(charlie)).let { it ->
             it.getOrThrow()
         }.publicKey)
 
@@ -103,11 +103,11 @@ class SyncKeyMappingFlowTests {
 
     @Test
     fun `sync identities without a transaction`() {
-        val anonymousAlice = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(alice)).let {
+        val anonymousAlice = AnonymousParty(aliceNode.startFlow(RequestKey(alice)).let {
             it.getOrThrow()
         }.publicKey)
 
-        val anonymousCharlie = AnonymousParty(aliceNode.startFlow(RequestKeyInitiator(charlie)).let {
+        val anonymousCharlie = AnonymousParty(aliceNode.startFlow(RequestKey(charlie)).let {
             it.getOrThrow()
         }.publicKey)
 

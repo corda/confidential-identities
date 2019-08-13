@@ -44,7 +44,7 @@ class DriverBasedTest {
         verifyNodesResolve(nodeA, nodeB, nodeC)
 
         // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonKey = nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
+        val anonKey = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
 
         val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
@@ -55,7 +55,7 @@ class DriverBasedTest {
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(ci))
 
         // Request a new key mapping for the CI
-        nodeB.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity(), ci.owningKey).let {
+        nodeB.rpc.startFlow(::VerifyAndAddKey, nodeA.nodeInfo.singleIdentity(), ci.owningKey).let {
             it.returnValue
         }.getOrThrow()
 
@@ -78,7 +78,7 @@ class DriverBasedTest {
                 startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
         ).waitForAll()
 
-        val anonKey = nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
+        val anonKey = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
 
         val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
@@ -111,8 +111,8 @@ class DriverBasedTest {
         ).waitForAll()
 
         // Charlie creates two new confidential identities
-        val anonymousAlice = AnonymousParty(nodeC.rpc.startFlow(::RequestKeyInitiator, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
-        val anonymousCharlie = AnonymousParty(nodeC.rpc.startFlow(::RequestKeyInitiator, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
+        val anonymousAlice = AnonymousParty(nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
+        val anonymousCharlie = AnonymousParty(nodeC.rpc.startFlow(::RequestKey, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
 
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice))
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie))
@@ -132,6 +132,7 @@ class DriverBasedTest {
     private fun withDriver(test: DriverDSL.() -> Unit) = driver(
         DriverParameters(
             isDebug = true,
+            startNodesInProcess = false,
             cordappsForAllNodes = listOf(
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
