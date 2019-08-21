@@ -3,6 +3,7 @@ package com.r3.corda.lib.ci
 import net.corda.core.CordaInternal
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.SignedData
+import net.corda.core.flows.FlowException
 import net.corda.core.identity.Party
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
@@ -71,6 +72,20 @@ fun verifySignedChallengeResponseSignature(signedKeyForAccount: SignedKeyForAcco
         signedKeyForAccount.signedChallengeResponse.sig.verify(signedKeyForAccount.signedChallengeResponse.raw.hash.bytes)
     } catch (ex: SignatureException) {
         throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
+    }
+}
+
+/**
+ * Attempts to store a mapping between a [PublicKey] and [Party] in the [IdentityService].
+ */
+@CordaInternal
+@VisibleForTesting
+fun registerKeyToParty(key: PublicKey, party: Party, serviceHub: ServiceHub) {
+    try {
+        serviceHub.identityService.registerKeyToParty(key, party)
+    } catch (e: Exception) {
+        throw FlowException("Could not register a new key for party: $party as the provided public key is already registered " +
+                "or registered to a different party.")
     }
 }
 
