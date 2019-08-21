@@ -1,5 +1,6 @@
 package com.r3.corda.lib.ci
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
@@ -8,7 +9,9 @@ import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.core.node.ServiceHub
 import net.corda.core.utilities.getOrThrow
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
@@ -22,6 +25,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.security.PublicKey
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -134,4 +138,43 @@ class RequestKeyFlowTests {
         }
         assertEquals(expected, actual)
     }
+
+    @Test
+    fun `verify key can be looked up on both nodes involved in the key generation`() {
+        val uuid = UUID.randomUUID()
+        // Alice requests that bob generates a new key for an account
+        val newKey = aliceNode.startFlow(RequestKeyForAccount(bob, uuid)).let {
+            it.getOrThrow()
+        }.publicKey
+
+        val keyOnAlice = lookupPublicKey(uuid, aliceNode.services)
+        val keyOnBob = lookupPublicKey(uuid, bobNode.services)
+
+        assertThat(keyOnAlice).isEqualTo(newKey)
+        assertThat(keyOnBob).isEqualTo(newKey)
+    }
+
+    @Suspendable
+    fun lookupPublicKey(uuid: UUID, serviceHub: ServiceHub): PublicKey? {
+        val key = serviceHub.withEntityManager {
+            val query = createQuery(
+                    """
+                        select $publicKeyHashToExternalId_publicKeyHash
+                        from $publicKeyHashToExternalId
+                        where $publicKeyHashToExternalId_externalId = :uuid
+                    """,
+                    PublicKey::class.java
+            )
+            query.setParameter("uuid", uuid)
+            query.resultList
+        }
+        return key.singleOrNull()
+    }
+
+    /** Table names. */
+    internal val publicKeyHashToExternalId = PublicKeyHashToExternalId::class.java.name
+
+    /** Column names. */
+    internal val publicKeyHashToExternalId_externalId = PublicKeyHashToExternalId::externalId.name
+    internal val publicKeyHashToExternalId_publicKeyHash = PublicKeyHashToExternalId::publicKeyHash.name
 }
