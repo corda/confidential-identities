@@ -74,12 +74,7 @@ private constructor(
         val counterParty = session.counterparty
         val newKey = signedKeyForAccount.publicKey
 
-        try {
-            serviceHub.identityService.registerKeyToParty(newKey, counterParty)
-        } catch (e: Exception) {
-            throw FlowException("Could not register a new key for party: $counterParty as the provided public key is already registered " +
-                    "or registered to a different party.")
-        }
+        registerKeyToParty(newKey, counterParty, serviceHub)
         return signedKeyForAccount
     }
 }
@@ -92,11 +87,19 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() 
     override fun call() {
         val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
         when (request) {
-            is RequestKeyForUUID -> otherSession.send(createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId))
-            is RequestForKnownKey -> otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
+            is RequestKeyForUUID -> {
+                val newKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
+                otherSession.send(newKey)
+                registerKeyToParty(newKey.publicKey, ourIdentity, serviceHub)
+            }
+            is RequestForKnownKey -> {
+                otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
+                registerKeyToParty(request.knownKey, ourIdentity, serviceHub)
+            }
             is RequestFreshKey -> {
                 val newKey = serviceHub.keyManagementService.freshKey()
                 otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, newKey))
+                registerKeyToParty(newKey, ourIdentity, serviceHub)
             }
         }
     }
