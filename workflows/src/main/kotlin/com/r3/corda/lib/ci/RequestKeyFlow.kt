@@ -6,6 +6,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
@@ -82,25 +83,28 @@ private constructor(
 /**
  * Responder flow to [RequestKeyFlow].
  */
-class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<AnonymousParty>() {
+    private lateinit var key: PublicKey
     @Suspendable
-    override fun call() {
+    override fun call(): AnonymousParty {
         val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
         when (request) {
             is RequestKeyForUUID -> {
-                val newKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
-                otherSession.send(newKey)
-                registerKeyToParty(newKey.publicKey, ourIdentity, serviceHub)
+                val signedKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
+                otherSession.send(signedKey)
+                key = signedKey.publicKey
             }
             is RequestForKnownKey -> {
                 otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
-                registerKeyToParty(request.knownKey, ourIdentity, serviceHub)
+                key = request.knownKey
             }
             is RequestFreshKey -> {
                 val newKey = serviceHub.keyManagementService.freshKey()
                 otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, newKey))
-                registerKeyToParty(newKey, ourIdentity, serviceHub)
+                key = newKey
             }
         }
+        registerKeyToParty(key, ourIdentity, serviceHub)
+        return AnonymousParty(key)
     }
 }
