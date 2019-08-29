@@ -6,6 +6,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
@@ -27,7 +28,7 @@ class RequestKeyFlow
 private constructor(
         private val session: FlowSession,
         private val uuid: UUID?,
-        private val key: PublicKey?) : FlowLogic<SignedKeyForAccount>() {
+        private val key: PublicKey?) : FlowLogic<AnonymousParty>() {
     constructor(session: FlowSession, uuid: UUID) : this(session, uuid, null)
     constructor(session: FlowSession, key: PublicKey) : this(session, UniqueIdentifier().id, key)
     constructor(session: FlowSession) : this(session, null, null)
@@ -47,7 +48,7 @@ private constructor(
 
     @Suspendable
     @Throws(FlowException::class)
-    override fun call(): SignedKeyForAccount {
+    override fun call(): AnonymousParty {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
 
@@ -73,34 +74,37 @@ private constructor(
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
         val counterParty = session.counterparty
         val newKey = signedKeyForAccount.publicKey
-
         registerKeyToParty(newKey, counterParty, serviceHub)
-        return signedKeyForAccount
+
+        return AnonymousParty(newKey)
     }
 }
 
 /**
  * Responder flow to [RequestKeyFlow].
  */
-class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<AnonymousParty>() {
+    private lateinit var key: PublicKey
     @Suspendable
-    override fun call() {
+    override fun call(): AnonymousParty {
         val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
         when (request) {
             is RequestKeyForUUID -> {
-                val newKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
-                otherSession.send(newKey)
-                registerKeyToParty(newKey.publicKey, ourIdentity, serviceHub)
+                val signedKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
+                otherSession.send(signedKey)
+                key = signedKey.publicKey
             }
             is RequestForKnownKey -> {
                 otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
-                registerKeyToParty(request.knownKey, ourIdentity, serviceHub)
+                key = request.knownKey
             }
             is RequestFreshKey -> {
                 val newKey = serviceHub.keyManagementService.freshKey()
                 otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, newKey))
-                registerKeyToParty(newKey, ourIdentity, serviceHub)
+                key = newKey
             }
         }
+        registerKeyToParty(key, ourIdentity, serviceHub)
+        return AnonymousParty(key)
     }
 }

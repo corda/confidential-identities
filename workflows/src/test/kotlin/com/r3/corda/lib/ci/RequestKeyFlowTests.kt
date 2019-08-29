@@ -6,7 +6,6 @@ import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -60,7 +59,6 @@ class RequestKeyFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-
     }
 
     @After
@@ -71,9 +69,9 @@ class RequestKeyFlowTests {
     @Test
     fun `request a new key`() {
         // Alice requests that bob generates a new key for an account
-        val newKey = aliceNode.startFlow(RequestKey(bob)).let {
+        val anonymousParty = aliceNode.startFlow(RequestKey(bob)).let {
             it.getOrThrow()
-        }.publicKey
+        }
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -81,18 +79,18 @@ class RequestKeyFlowTests {
         assertThat(bobKeys).hasSize(2)
         assertThat(aliceKeys).hasSize(1)
 
-        assertThat(bobNode.services.keyManagementService.keys).contains(newKey)
+        assertThat(bobNode.services.keyManagementService.keys).contains(anonymousParty.owningKey)
 
-        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(AnonymousParty(newKey))
+        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(anonymousParty)
         assertThat(resolvedBobParty).isEqualTo(bob)
     }
 
     @Test
     fun `request new key with a uuid provided`() {
         // Alice requests that bob generates a new key for an account
-        val newKey = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).let {
+        val anonymousParty = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).let {
             it.getOrThrow()
-        }.publicKey
+        }
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -100,21 +98,24 @@ class RequestKeyFlowTests {
         assertThat(bobKeys).hasSize(2)
         assertThat(aliceKeys).hasSize(1)
 
-        assertThat(bobNode.services.keyManagementService.keys).contains(newKey)
+        assertThat(bobNode.services.keyManagementService.keys).contains(anonymousParty.owningKey)
 
-        val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(AnonymousParty(newKey))
-        assertThat(resolvedBobParty).isEqualTo(bob)
+        val partyOnAlice = aliceNode.services.identityService.wellKnownPartyFromAnonymous(anonymousParty)
+        assertThat(bob).isEqualTo(partyOnAlice)
+
+        val partyOnBob = bobNode.services.identityService.wellKnownPartyFromAnonymous(anonymousParty)
+        assertThat(bob).isEqualTo(partyOnBob)
     }
 
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = AnonymousParty(charlieNode.startFlow(RequestKey(alice)).let{
+        val anonymousParty = charlieNode.startFlow(RequestKey(alice)).let {
             it.getOrThrow()
-        }.publicKey)
+        }
 
         val issueTx = charlieNode.startFlow(
-                IssueTokens(listOf(1000 of USD issuedBy charlie heldBy AnonymousParty(anonymousParty.owningKey)))
+                IssueTokens(listOf(1000 of USD issuedBy charlie heldBy anonymousParty))
         ).getOrThrow()
         val confidentialIdentity = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
 

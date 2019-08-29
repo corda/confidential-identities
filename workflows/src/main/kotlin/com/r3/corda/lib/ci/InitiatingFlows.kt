@@ -3,6 +3,7 @@ package com.r3.corda.lib.ci
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.services.KeyManagementService
@@ -21,10 +22,10 @@ import java.util.*
  */
 @StartableByRPC
 @InitiatingFlow
-class RequestKeyForAccount(private val otherParty: Party, private val uuid: UUID) : FlowLogic<SignedKeyForAccount>() {
+class RequestKeyForAccount(private val otherParty: Party, private val uuid: UUID) : FlowLogic<AnonymousParty>() {
 
     @Suspendable
-    override fun call(): SignedKeyForAccount {
+    override fun call(): AnonymousParty {
         return subFlow(RequestKeyFlow(initiateFlow(otherParty), uuid))
     }
 }
@@ -50,9 +51,9 @@ class RequestKeyForAccountResponder(private val otherSession: FlowSession) : Flo
  */
 @StartableByRPC
 @InitiatingFlow
-class VerifyAndAddKey(private val otherParty: Party, private val key: PublicKey) : FlowLogic<SignedKeyForAccount>() {
+class VerifyAndAddKey(private val otherParty: Party, private val key: PublicKey) : FlowLogic<AnonymousParty>() {
     @Suspendable
-    override fun call(): SignedKeyForAccount {
+    override fun call(): AnonymousParty {
         return subFlow(RequestKeyFlow(initiateFlow(otherParty), key))
     }
 }
@@ -79,9 +80,9 @@ class VerifyAndAddKeyResponder(private val otherSession: FlowSession) : FlowLogi
  */
 @StartableByRPC
 @InitiatingFlow
-class RequestKey(private val otherParty: Party) : FlowLogic<SignedKeyForAccount>() {
+class RequestKey(private val otherParty: Party) : FlowLogic<AnonymousParty>() {
     @Suspendable
-    override fun call(): SignedKeyForAccount {
+    override fun call(): AnonymousParty {
         return subFlow(RequestKeyFlow(initiateFlow(otherParty)))
     }
 }

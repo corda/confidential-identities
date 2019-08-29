@@ -1,8 +1,7 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
-        //TODO change before merge
-        corda_release_version = '5.0-SNAPSHOT-WILLH'
+        corda_release_version = '4.3-SNAPSHOT'
         corda_gradle_plugins_version = '4.0.42'
         kotlin_version = '1.2.71'
         junit_version = '4.12'
