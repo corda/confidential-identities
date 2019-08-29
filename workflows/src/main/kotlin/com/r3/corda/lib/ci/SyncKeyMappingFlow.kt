@@ -26,12 +26,27 @@ private constructor(
         private val session: FlowSession,
         private val tx: WireTransaction?,
         private val identitiesToSync: List<AbstractParty>?) : FlowLogic<Unit>() {
+
+    /**
+     * Synchronize the "confidential identities" present in a transaction with the counterparty specified by the
+     * supplied flow session.
+     *
+     * @param session a flow session for the party to synchronize the confidential identities with
+     * @param tx the transaction to extract confidential identities from.
+     */
     constructor(session: FlowSession, tx: WireTransaction) : this(session, tx, null)
+
+    /**
+     * Synchronize the "confidential identities" present in a list of [AbstractParty]s with the counterparty specified
+     * by the supplied flow session.
+     *
+     * @param session a flow session for the party to synchronize the confidential identities with
+     * @param identitiesToSync the confidential identities to synchronize.
+     */
     constructor(session: FlowSession, identitiesToSync: List<AbstractParty>) : this(session, null, identitiesToSync)
 
     companion object {
         object SYNCING_KEY_MAPPINGS : ProgressTracker.Step("Syncing key mappings.")
-
     }
 
     override val progressTracker = ProgressTracker(SYNCING_KEY_MAPPINGS)
@@ -62,6 +77,7 @@ private constructor(
             try {
                 serviceHub.loadState(it).data
             } catch (e: TransactionResolutionException) {
+                logger.warn("WARNING: Could not resolve state with StateRef $it")
                 null
             }
         }
