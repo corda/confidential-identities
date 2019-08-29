@@ -6,14 +6,9 @@ import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
-import net.corda.core.concurrent.CordaFuture
-import net.corda.core.flows.StateMachineRunId
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.messaging.FlowHandle
-import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.messaging.startFlow
-import net.corda.core.toFuture
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
 import net.corda.testing.core.*
@@ -44,9 +39,9 @@ class DriverBasedTest {
         verifyNodesResolve(nodeA, nodeB, nodeC)
 
         // Charlie issues then pays some cash to a new confidential identity that Bob doesn't know about
-        val anonKey = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
+        val anonymousParty = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
 
-        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
+        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy anonymousParty
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
 
         val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
@@ -78,9 +73,9 @@ class DriverBasedTest {
                 startNode(providedName = CHARLIE_NAME, rpcUsers = listOf(cUser))
         ).waitForAll()
 
-        val anonKey = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey
+        val anonymousParty = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
 
-        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy AnonymousParty(anonKey)
+        val token = 1000 of GBP issuedBy nodeC.nodeInfo.singleIdentity() heldBy anonymousParty
         val issueTx  = nodeC.rpc.startFlow(::ConfidentialIssueTokens, listOf(token), emptyList()).returnValue.getOrThrow()
 
         val ci = issueTx.tx.outputs.map { it.data }.filterIsInstance<FungibleToken>().single().holder
@@ -111,8 +106,8 @@ class DriverBasedTest {
         ).waitForAll()
 
         // Charlie creates two new confidential identities
-        val anonymousAlice = AnonymousParty(nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
-        val anonymousCharlie = AnonymousParty(nodeC.rpc.startFlow(::RequestKey, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow().publicKey)
+        val anonymousAlice = nodeC.rpc.startFlow(::RequestKey, nodeA.nodeInfo.singleIdentity()).returnValue.getOrThrow()
+        val anonymousCharlie =nodeC.rpc.startFlow(::RequestKey, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow()
 
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousAlice))
         assertNull(nodeB.rpc.wellKnownPartyFromAnonymous(anonymousCharlie))

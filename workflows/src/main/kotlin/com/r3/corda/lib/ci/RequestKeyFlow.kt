@@ -28,7 +28,7 @@ class RequestKeyFlow
 private constructor(
         private val session: FlowSession,
         private val uuid: UUID?,
-        private val key: PublicKey?) : FlowLogic<SignedKeyForAccount>() {
+        private val key: PublicKey?) : FlowLogic<AnonymousParty>() {
     constructor(session: FlowSession, uuid: UUID) : this(session, uuid, null)
     constructor(session: FlowSession, key: PublicKey) : this(session, UniqueIdentifier().id, key)
     constructor(session: FlowSession) : this(session, null, null)
@@ -48,7 +48,7 @@ private constructor(
 
     @Suspendable
     @Throws(FlowException::class)
-    override fun call(): SignedKeyForAccount {
+    override fun call(): AnonymousParty {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
 
@@ -74,9 +74,9 @@ private constructor(
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
         val counterParty = session.counterparty
         val newKey = signedKeyForAccount.publicKey
-
         registerKeyToParty(newKey, counterParty, serviceHub)
-        return signedKeyForAccount
+
+        return AnonymousParty(newKey)
     }
 }
 

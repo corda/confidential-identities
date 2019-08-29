@@ -25,15 +25,15 @@ identities in an application.
 
 In order to use the CorDapp you will need to build against a specific Corda branch until the required changes to the 
 `IdentityService` will be released in the `4.3` version. First, clone the Corda repo
-and checkout the `feature/CID-878-non_party_flow_sessions` branch with the following commands:
+and checkout the `release/os/4.3` branch with the following commands:
 
     git clone https://github.com/corda/corda
     git fetch
-    git checkout origin feature/CID-878-non_party_flow_sessions
+    git checkout origin release/os/4.3
 
 Navigate to the `constants.properties` file in the root directory and set the following flag:
 
-    cordaVersion=5.0-SNAPSHOT
+    cordaVersion=4.3-SNAPSHOT
    
 Then run a `./gradlew clean install` from the root directory. This will be the `cordaVersion` you will need to build the 
 `confidential identities` CorDapp against. 
@@ -45,7 +45,7 @@ installed locally:
 
     buildscript {
         ext {
-            corda_release_version = '5.0-SNAPSHOT'
+            corda_release_version = '4.3-SNAPSHOT'
             confidential_id_release_version = '1.0-SNAPSHOT'
             confidential_id_release_group = 'com.r3.corda.lib.ci'
         }
