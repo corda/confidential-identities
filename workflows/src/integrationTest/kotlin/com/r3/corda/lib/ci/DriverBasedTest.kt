@@ -1,5 +1,9 @@
 package com.r3.corda.lib.ci
 
+import com.r3.corda.lib.obligation.RequestKey
+import com.r3.corda.lib.obligation.SyncKeyMappingInitiator
+import com.r3.corda.lib.obligation.SyncKeyMappingResponder
+import com.r3.corda.lib.obligation.VerifyAndAddKey
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
