@@ -15,14 +15,20 @@ import java.security.PublicKey
 import java.util.*
 
 /**
- * This flow registers a mapping in the [net.corda.core.node.services.IdentityService] between a [PublicKey] and a [Party]. It can generate a new key
- * pair for a given [UUID] and register the new key mapping, or a known [PublicKey] can be supplied to the flow which will register
- * a mapping between this key and the requesting party.
+ * This flow registers a mapping in the [net.corda.core.node.services.IdentityService] between a [PublicKey] and a
+ * [Party]. It can generate a new key pair for a given [UUID] and register the new key mapping, or a known [PublicKey]
+ * can be supplied to the flow which will register a mapping between this key and the requesting party.
  *
- * The generation of the [SignedKeyForAccount] is delegated to the counter-party which concatenates the original [ChallengeResponse] with its own
- * [ChallengeResponse] and signs over the concatenated hash before sending this value and the [PublicKey] and sends it back to the requesting node.
- * The requesting node verifies the signature on the [ChallengeResponse] and verifies the concatenated [ChallengeResponse] is the same as the one received
- * from the counter-party.
+ * The generation of the [SignedKeyForAccount] is delegated to the counter-party which concatenates the original
+ * [ChallengeResponse] with its own [ChallengeResponse] and signs over the concatenated hash before sending this value
+ * and the [PublicKey] and sends it back to the requesting node.
+ *
+ * The requesting node verifies the signature on the [ChallengeResponse] and verifies the concatenated
+ * [ChallengeResponse] is the same as the one received from the counter-party.
+ *
+ * @property session the session of the node to request a new key from
+ * @property uuid the accountId/externalId for the other node to generate a new key for
+ * @property key an existing key a proof is being requested for (this is usually null)
  */
 class RequestKeyFlow
 private constructor(
@@ -62,7 +68,13 @@ private constructor(
         object CHALLENGE_RESPONSE_VERIFIED : ProgressTracker.Step("SHA-256 is correct")
 
         @JvmStatic
-        fun tracker(): ProgressTracker = ProgressTracker(REQUESTING_KEY, VERIFYING_KEY, KEY_VERIFIED, VERIFYING_CHALLENGE_RESPONSE, CHALLENGE_RESPONSE_VERIFIED)
+        fun tracker(): ProgressTracker = ProgressTracker(
+                REQUESTING_KEY,
+                VERIFYING_KEY,
+                KEY_VERIFIED,
+                VERIFYING_CHALLENGE_RESPONSE,
+                CHALLENGE_RESPONSE_VERIFIED
+        )
     }
 
     override val progressTracker = tracker()
@@ -72,19 +84,18 @@ private constructor(
     override fun call(): AnonymousParty {
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
-
+        // Handle whether a key is already specified or not and whether a UUID is specified, or not.
         val requestKey = when {
             key == null && uuid != null -> RequestKeyForUUID(challengeResponseParam, uuid)
             key != null -> RequestForKnownKey(challengeResponseParam, key)
             else -> RequestFreshKey(challengeResponseParam)
         }
-
+        // Either get back a signed key or a flow exception is thrown.
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
-
+        // We need to verify the signature of the response and check that the payload is equal to what we expect.
         progressTracker.currentStep = VERIFYING_KEY
         verifySignedChallengeResponseSignature(signedKeyForAccount)
         progressTracker.currentStep = KEY_VERIFIED
-
         // Ensure the hash of both challenge response parameters matches the received hashed function
         progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
         val additionalParam = signedKeyForAccount.additionalChallengeResponseParam
@@ -92,14 +103,12 @@ private constructor(
         require(resultOfHashedParameters == signedKeyForAccount.signedChallengeResponse.raw.deserialize()) {
             "Challenge response invalid"
         }
-
         progressTracker.currentStep = CHALLENGE_RESPONSE_VERIFIED
-
         // Flow sessions can only be opened with parties in the networkMapCache so we can be assured this is a valid party
         val counterParty = session.counterparty
         val newKey = signedKeyForAccount.publicKey
-        registerKeyToParty(newKey, counterParty, serviceHub)
-
+        // Store a mapping of the key to the x500 name
+        serviceHub.identityService.registerKey(newKey, counterParty, uuid)
         return AnonymousParty(newKey)
     }
 }
@@ -113,21 +122,44 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
         val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
         val key = when (request) {
             is RequestKeyForUUID -> {
-                val signedKey = createSignedOwnershipClaimFromUUID(serviceHub, request.challengeResponseParam, request.externalId)
+                val signedKey = createSignedOwnershipClaimFromUUID(
+                        serviceHub = serviceHub,
+                        challengeResponseParam = request.challengeResponseParam,
+                        uuid = request.externalId
+                )
                 otherSession.send(signedKey)
+                // No need to call RegisterKey as it's done by createSignedOwnershipClaimFromUUID.
                 signedKey.publicKey
             }
             is RequestForKnownKey -> {
-                otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, request.knownKey))
+                val signedKey = createSignedOwnershipClaimFromKnownKey(
+                        serviceHub = serviceHub,
+                        challengeResponseParam = request.challengeResponseParam,
+                        knownKey = request.knownKey
+                )
+                otherSession.send(signedKey)
+                // Double check that the key has not already been registered to another node.
+                try {
+                    serviceHub.identityService.registerKey(request.knownKey, ourIdentity)
+                } catch (e: Exception) {
+                    throw FlowException("Could not register a new key for party: $ourIdentity as the provided public " +
+                            "key is already registered or registered to a different party.")
+                }
                 request.knownKey
             }
             is RequestFreshKey -> {
+                // No need to call RegisterKey as it's done by keyManagementService.freshKey.
                 val newKey = serviceHub.keyManagementService.freshKey()
-                otherSession.send(createSignedOwnershipClaimFromKnownKey(serviceHub, request.challengeResponseParam, newKey))
+                val signedKey = createSignedOwnershipClaimFromKnownKey(
+                        serviceHub = serviceHub,
+                        challengeResponseParam = request.challengeResponseParam,
+                        knownKey = newKey
+                )
+                otherSession.send(signedKey)
                 newKey
             }
         }
-        registerKeyToParty(key, ourIdentity, serviceHub)
+
         return AnonymousParty(key)
     }
 }

@@ -1,7 +1,7 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
-        corda_release_version = '4.3-SNAPSHOT'
+        corda_release_version = '4.3-RC01'
         corda_gradle_plugins_version = '4.0.42'
         kotlin_version = '1.2.71'
         junit_version = '4.12'
@@ -12,7 +12,7 @@ buildscript {
         tokens_release_group='com.r3.corda.lib.tokens'
         tokens_sdk_version='1.0'
         confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0-SNAPSHOT"
+        confidential_id_release_version = "1.0-RC02"
     }
 
     repositories {
@@ -109,10 +109,7 @@ dependencies {
     cordaCompile "org.slf4j:jul-to-slf4j:$slf4j_version"
 }
 
-def publishProjects = [
-        project(":workflows")
-]
-
+def publishProjects = [project(":workflows")]
 
 configure(publishProjects) { subproject ->
     apply plugin: 'kotlin'
