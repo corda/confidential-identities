@@ -58,17 +58,21 @@ private constructor(
                 if (tx != null) {
                     extractConfidentialIdentities(tx)
                 } else {
-                    identitiesToSync ?: throw IllegalArgumentException("A transaction or a list of anonymous parties must be provided to this flow.")
+                    identitiesToSync ?: throw IllegalArgumentException("A transaction or a list of anonymous parties " +
+                            "must be provided to this flow.")
                 }
 
         // Send confidential identities to the counter party and return a list of parties they wish to resolve
         val requestedIdentities = session.sendAndReceive<List<AbstractParty>>(confidentialIdentities).unwrap { req ->
             require(req.all { it in confidentialIdentities }) {
-                "${session.counterparty} requested resolution of a confidential identity that is not present in the list of identities initially provided."
+                "${session.counterparty} requested resolution of a confidential identity that is not present in the " +
+                        "list of identities initially provided."
             }
             req
         }
-        val resolvedIds = requestedIdentities.map { it.owningKey to serviceHub.identityService.wellKnownPartyFromAnonymous(it) }.toMap()
+        val resolvedIds = requestedIdentities.map {
+            it.owningKey to serviceHub.identityService.wellKnownPartyFromAnonymous(it)
+        }.toMap()
         session.send(resolvedIds)
     }
 
@@ -94,22 +98,30 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
     companion object {
         object RECEIVING_IDENTITIES : ProgressTracker.Step("Receiving confidential identities.")
         object RECEIVING_PARTIES : ProgressTracker.Step("Receiving potential party objects for unknown identities.")
-        object NO_PARTIES_RECEIVED : ProgressTracker.Step("None of the requested unknown parties were resolved by the counter party. " +
-                "Terminating the flow early.")
+        object NO_PARTIES_RECEIVED : ProgressTracker.Step("None of the requested unknown parties were resolved by the " +
+                "counter party. Terminating the flow early.")
 
-        object REQUESTING_PROOF_OF_ID : ProgressTracker.Step("Requesting a signed key to party mapping for the received parties to verify" +
-                "the authenticity of the party.")
+        object REQUESTING_PROOF_OF_ID : ProgressTracker.Step("Requesting a signed key to party mapping for the " +
+                "received parties to verify the authenticity of the party.")
 
         object IDENTITIES_SYNCHRONISED : ProgressTracker.Step("Identities have finished synchronising.")
     }
 
-    override val progressTracker: ProgressTracker = ProgressTracker(RECEIVING_IDENTITIES, RECEIVING_PARTIES, NO_PARTIES_RECEIVED, REQUESTING_PROOF_OF_ID, IDENTITIES_SYNCHRONISED)
+    override val progressTracker: ProgressTracker = ProgressTracker(
+            RECEIVING_IDENTITIES,
+            RECEIVING_PARTIES,
+            NO_PARTIES_RECEIVED,
+            REQUESTING_PROOF_OF_ID,
+            IDENTITIES_SYNCHRONISED
+    )
 
     @Suspendable
     override fun call() {
         progressTracker.currentStep = RECEIVING_IDENTITIES
         val allConfidentialIds = otherSession.receive<List<AbstractParty>>().unwrap { it }
-        val unknownIdentities = allConfidentialIds.filter { serviceHub.identityService.wellKnownPartyFromAnonymous(it) == null }
+        val unknownIdentities = allConfidentialIds.filter {
+            serviceHub.identityService.wellKnownPartyFromAnonymous(it) == null
+        }
         otherSession.send(unknownIdentities)
         progressTracker.currentStep = RECEIVING_PARTIES
 

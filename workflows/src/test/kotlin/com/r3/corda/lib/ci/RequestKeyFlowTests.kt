@@ -69,9 +69,7 @@ class RequestKeyFlowTests {
     @Test
     fun `request a new key`() {
         // Alice requests that bob generates a new key for an account
-        val anonymousParty = aliceNode.startFlow(RequestKey(bob)).let {
-            it.getOrThrow()
-        }
+        val anonymousParty = aliceNode.startFlow(RequestKey(bob)).getOrThrow()
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -79,7 +77,8 @@ class RequestKeyFlowTests {
         assertThat(bobKeys).hasSize(2)
         assertThat(aliceKeys).hasSize(1)
 
-        assertThat(bobNode.services.keyManagementService.keys).contains(anonymousParty.owningKey)
+        // Check that bob stored the key as expected.
+        assertEquals(listOf(anonymousParty.owningKey), bobNode.services.keyManagementService.filterMyKeys(listOf(anonymousParty.owningKey)))
 
         val resolvedBobParty = aliceNode.services.identityService.wellKnownPartyFromAnonymous(anonymousParty)
         assertThat(resolvedBobParty).isEqualTo(bob)
@@ -88,9 +87,7 @@ class RequestKeyFlowTests {
     @Test
     fun `request new key with a uuid provided`() {
         // Alice requests that bob generates a new key for an account
-        val anonymousParty = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).let {
-            it.getOrThrow()
-        }
+        val anonymousParty = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).getOrThrow()
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
@@ -98,7 +95,8 @@ class RequestKeyFlowTests {
         assertThat(bobKeys).hasSize(2)
         assertThat(aliceKeys).hasSize(1)
 
-        assertThat(bobNode.services.keyManagementService.keys).contains(anonymousParty.owningKey)
+        // Check that bob stored the key as expected.
+        assertEquals(listOf(anonymousParty.owningKey), bobNode.services.keyManagementService.filterMyKeys(listOf(anonymousParty.owningKey)))
 
         val partyOnAlice = aliceNode.services.identityService.wellKnownPartyFromAnonymous(anonymousParty)
         assertThat(bob).isEqualTo(partyOnAlice)
@@ -110,9 +108,7 @@ class RequestKeyFlowTests {
     @Test
     fun `verify a known key with another party`() {
         // Charlie issues then pays some cash to a new confidential identity
-        val anonymousParty = charlieNode.startFlow(RequestKey(alice)).let {
-            it.getOrThrow()
-        }
+        val anonymousParty = charlieNode.startFlow(RequestKey(alice)).getOrThrow()
 
         val issueTx = charlieNode.startFlow(
                 IssueTokens(listOf(1000 of USD issuedBy charlie heldBy anonymousParty))
@@ -123,9 +119,7 @@ class RequestKeyFlowTests {
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
         // Request a new key mapping for the CI
-        bobNode.startFlow(VerifyAndAddKey(alice, confidentialIdentity.owningKey)).let {
-            it.getOrThrow()
-        }
+        bobNode.startFlow(VerifyAndAddKey(alice, confidentialIdentity.owningKey)).getOrThrow()
 
         val expected = charlieNode.transaction {
             charlieNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
