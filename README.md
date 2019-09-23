@@ -21,23 +21,6 @@ Instead, we still store a mapping between a newly generated `PublicKey` for a co
 This CorDapp contains three flows which can be used to generate, share and synchronise data required for use of confidential
 identities in an application. 
 
-### Build confidential identities against Corda branch
-
-In order to use the CorDapp you will need to build against a specific Corda branch until the required changes to the 
-`IdentityService` will be released in the `4.3` version. First, clone the Corda repo
-and checkout the `release/os/4.3` branch with the following commands:
-
-    git clone https://github.com/corda/corda
-    git fetch
-    git checkout origin release/os/4.3
-
-Navigate to the `constants.properties` file in the root directory and set the following flag:
-
-    cordaVersion=4.3-SNAPSHOT
-   
-Then run a `./gradlew clean install` from the root directory. This will be the `cordaVersion` you will need to build the 
-`confidential identities` CorDapp against. 
-
 ### Adding confidential identities dependencies to an existing CorDapp
 
 First, add a variable for the confidential identities version you wish to use and set the corda version that should've been 
@@ -45,8 +28,8 @@ installed locally:
 
     buildscript {
         ext {
-            corda_release_version = '4.3-SNAPSHOT'
-            confidential_id_release_version = '1.0-SNAPSHOT'
+            corda_release_version = '4.3-RC01'
+            confidential_id_release_version = '1.0-RC02'
             confidential_id_release_group = 'com.r3.corda.lib.ci'
         }
     }
@@ -61,7 +44,7 @@ list of repositories for your project:
 Now, you can add the confidential identities dependencies to the `dependencies` block
 in each module of your CorDapp. In your workflow `build.gradle` add:
 
-    cordaCompile "$confidential_id_release_group:workflows:$confidential_id_release_version"
+    cordaCompile "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
 
 If you want to use the `deployNodes` task, you will need to add the
 following dependency to your root `build.gradle` file:
@@ -103,7 +86,6 @@ This flow should be used when a node wishes to synchronise the `PublicKey` to `C
 identity with another node. This confidential participants of a transaction can be extracted from a given `WireTransaction` 
 if this is passed as a parameter to the flow. Alternatively, the node can bypass the need for a transaction and accept a
 list of `AbstractParty` that it wishes to synchronize with another node. 
-
 
 ### Security protocol
 
