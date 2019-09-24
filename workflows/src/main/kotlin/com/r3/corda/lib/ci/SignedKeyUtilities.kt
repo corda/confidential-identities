@@ -28,13 +28,12 @@ typealias ChallengeResponse = SecureHash.SHA256
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaimFromUUID(
-        serviceHub: ServiceHub,
+fun ServiceHub.createSignedOwnershipClaimFromUUID(
         challengeResponseParam: ChallengeResponse,
         uuid: UUID
 ): SignedKeyForAccount {
-    val newKey = serviceHub.keyManagementService.freshKey(uuid)
-    return concatChallengeResponseAndSign(serviceHub, challengeResponseParam, newKey)
+    val newKey = this.keyManagementService.freshKey(uuid)
+    return this.concatChallengeResponseAndSign(challengeResponseParam, newKey)
 }
 
 /**
@@ -47,12 +46,11 @@ fun createSignedOwnershipClaimFromUUID(
  */
 @CordaInternal
 @VisibleForTesting
-fun createSignedOwnershipClaimFromKnownKey(
-        serviceHub: ServiceHub,
+fun ServiceHub.createSignedOwnershipClaimFromKnownKey(
         challengeResponseParam: ChallengeResponse,
         knownKey: PublicKey
 ): SignedKeyForAccount {
-    return concatChallengeResponseAndSign(serviceHub, challengeResponseParam, knownKey)
+    return this.concatChallengeResponseAndSign(challengeResponseParam, knownKey)
 }
 
 /**
@@ -60,15 +58,14 @@ fun createSignedOwnershipClaimFromKnownKey(
  * the concatenated [ChallengeResponse] using the new [PublicKey]. The method returns the [SignedKeyForAccount] containing
  * the new [PublicKey], signed data structure and additional [ChallengeResponse] parameter.
  */
-private fun concatChallengeResponseAndSign(
-        serviceHub: ServiceHub,
+private fun ServiceHub.concatChallengeResponseAndSign(
         challengeResponseParam: ChallengeResponse,
         key: PublicKey
 ): SignedKeyForAccount {
     // Introduce a second parameter to prevent signing over some malicious transaction ID which may be in the form of a SHA256 hash
     val additionalParameter = SecureHash.randomSHA256()
     val hashOfBothParameters = challengeResponseParam.hashConcat(additionalParameter)
-    val keySig = serviceHub.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, key)
+    val keySig = this.keyManagementService.sign(hashOfBothParameters.serialize().hash.bytes, key)
     // Sign the challengeResponse with the newly generated key
     val signedData = SignedData(hashOfBothParameters.serialize(), keySig)
     return SignedKeyForAccount(key, signedData, additionalParameter)

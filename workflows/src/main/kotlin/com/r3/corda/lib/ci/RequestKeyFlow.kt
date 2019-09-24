@@ -122,8 +122,7 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
         val request = otherSession.receive<SendRequestForKeyMapping>().unwrap { it }
         val key = when (request) {
             is RequestKeyForUUID -> {
-                val signedKey = createSignedOwnershipClaimFromUUID(
-                        serviceHub = serviceHub,
+                val signedKey = serviceHub.createSignedOwnershipClaimFromUUID(
                         challengeResponseParam = request.challengeResponseParam,
                         uuid = request.externalId
                 )
@@ -132,8 +131,7 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
                 signedKey.publicKey
             }
             is RequestForKnownKey -> {
-                val signedKey = createSignedOwnershipClaimFromKnownKey(
-                        serviceHub = serviceHub,
+                val signedKey = serviceHub.createSignedOwnershipClaimFromKnownKey(
                         challengeResponseParam = request.challengeResponseParam,
                         knownKey = request.knownKey
                 )
@@ -150,8 +148,7 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
             is RequestFreshKey -> {
                 // No need to call RegisterKey as it's done by keyManagementService.freshKey.
                 val newKey = serviceHub.keyManagementService.freshKey()
-                val signedKey = createSignedOwnershipClaimFromKnownKey(
-                        serviceHub = serviceHub,
+                val signedKey = serviceHub.createSignedOwnershipClaimFromKnownKey(
                         challengeResponseParam = request.challengeResponseParam,
                         knownKey = newKey
                 )
