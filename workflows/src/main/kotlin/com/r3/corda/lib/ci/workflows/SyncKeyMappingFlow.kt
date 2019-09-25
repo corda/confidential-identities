@@ -1,4 +1,4 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.workflows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.ContractState
@@ -125,7 +125,7 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         otherSession.send(unknownIdentities)
         progressTracker.currentStep = RECEIVING_PARTIES
 
-        val mapConfidentialKeyToParty = otherSession.receive<Map<PublicKey, Party>>().unwrap { it }
+        val mapConfidentialKeyToParty = otherSession.receive<Map<PublicKey, Party>>().unwrap { it.toList() }
         if (mapConfidentialKeyToParty.isEmpty()) {
             progressTracker.currentStep = NO_PARTIES_RECEIVED
         }
@@ -133,7 +133,7 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
         progressTracker.currentStep = REQUESTING_PROOF_OF_ID
 
         mapConfidentialKeyToParty.forEach {
-            subFlow(VerifyAndAddKey(it.value, it.key))
+            subFlow(VerifyAndAddKey(it.second, it.first))
         }
         progressTracker.currentStep = IDENTITIES_SYNCHRONISED
     }

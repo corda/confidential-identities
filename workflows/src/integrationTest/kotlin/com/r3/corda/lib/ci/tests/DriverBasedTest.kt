@@ -1,17 +1,23 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.tests
 
+import com.r3.corda.lib.ci.workflows.RequestKey
+import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
+import com.r3.corda.lib.ci.workflows.SyncKeyMappingResponder
+import com.r3.corda.lib.ci.workflows.VerifyAndAddKey
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialIssueTokens
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
-import net.corda.testing.core.*
+import net.corda.testing.core.ALICE_NAME
+import net.corda.testing.core.BOB_NAME
+import net.corda.testing.core.CHARLIE_NAME
+import net.corda.testing.core.singleIdentity
 import net.corda.testing.driver.DriverDSL
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.NodeHandle
@@ -132,7 +138,7 @@ class DriverBasedTest {
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
-                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+                    TestCordapp.findCordapp("com.r3.corda.lib.ci.workflows")
             )
         )
     ) { test() }

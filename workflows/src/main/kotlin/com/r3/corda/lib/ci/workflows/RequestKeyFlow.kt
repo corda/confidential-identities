@@ -1,4 +1,4 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.workflows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.UniqueIdentifier

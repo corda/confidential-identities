@@ -1,4 +1,4 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.tests
 
 import net.corda.core.CordaInternal
 import net.corda.core.concurrent.CordaFuture
