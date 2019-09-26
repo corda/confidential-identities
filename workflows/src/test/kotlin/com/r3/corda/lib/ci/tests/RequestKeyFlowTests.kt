@@ -1,5 +1,8 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.tests
 
+import com.r3.corda.lib.ci.workflows.RequestKey
+import com.r3.corda.lib.ci.workflows.RequestKeyForAccount
+import com.r3.corda.lib.ci.workflows.VerifyAndAddKey
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
@@ -45,7 +48,8 @@ class RequestKeyFlowTests {
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci.workflows")
                         ),
                         threadPerNode = true
                 )

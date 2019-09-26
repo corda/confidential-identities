@@ -1,12 +1,13 @@
-package com.r3.corda.lib.ci
+package com.r3.corda.lib.ci.tests
 
+import com.r3.corda.lib.ci.workflows.RequestKey
+import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -44,7 +45,7 @@ class SyncKeyMappingFlowTests {
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci.workflows")
                         ),
                         threadPerNode = true
 
