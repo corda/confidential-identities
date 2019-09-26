@@ -1,7 +1,7 @@
 @Library('existing-build-control')
-import com.r3.build.BuildControl
+import static com.r3.build.BuildControl.killAllExistingBuildsForJob
 
-BuildControl.killAllExistingBuildsForJob(this)
+killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 
 pipeline {
     agent {
