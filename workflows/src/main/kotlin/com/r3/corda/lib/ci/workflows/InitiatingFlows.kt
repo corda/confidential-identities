@@ -22,7 +22,7 @@ import java.util.*
  */
 @StartableByRPC
 @InitiatingFlow
-class RequestKeyForAccount(private val otherParty: Party, private val uuid: UUID) : FlowLogic<AnonymousParty>() {
+class RequestKeyForUUIDInitiator(private val otherParty: Party, private val uuid: UUID) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
         return subFlow(RequestKeyFlow(initiateFlow(otherParty), uuid))
@@ -30,10 +30,10 @@ class RequestKeyForAccount(private val otherParty: Party, private val uuid: UUID
 }
 
 /**
- * Responder flow to [RequestKeyForAccount].
+ * Responder flow to [RequestKeyForUUID].
  */
-@InitiatedBy(RequestKeyForAccount::class)
-class RequestKeyForAccountResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
+@InitiatedBy(RequestKeyForUUIDInitiator::class)
+class RequestKeyForUUIDResponder(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         subFlow(ProvideKeyFlow(otherSession))

@@ -1,7 +1,7 @@
 package com.r3.corda.lib.ci.tests
 
 import com.r3.corda.lib.ci.workflows.RequestKey
-import com.r3.corda.lib.ci.workflows.RequestKeyForAccount
+import com.r3.corda.lib.ci.workflows.RequestKeyForUUIDInitiator
 import com.r3.corda.lib.ci.workflows.VerifyAndAddKey
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
@@ -48,7 +48,6 @@ class RequestKeyFlowTests {
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.ci"),
                                 TestCordapp.findCordapp("com.r3.corda.lib.ci.workflows")
                         ),
                         threadPerNode = true
@@ -91,7 +90,7 @@ class RequestKeyFlowTests {
     @Test
     fun `request new key with a uuid provided`() {
         // Alice requests that bob generates a new key for an account
-        val anonymousParty = aliceNode.startFlow(RequestKeyForAccount(bob, UUID.randomUUID())).getOrThrow()
+        val anonymousParty = aliceNode.startFlow(RequestKeyForUUIDInitiator(bob, UUID.randomUUID())).getOrThrow()
 
         // Bob has the newly generated key as well as the owning key
         val bobKeys = bobNode.services.keyManagementService.keys
