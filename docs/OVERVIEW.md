@@ -6,7 +6,7 @@ Confidential identities in Corda provide a way to restrict the knowledge of iden
 
 This mechanism allows a node to carry out transactions in which the participants within it do not want to be known to the network. Only the parties involved in the transaction will be able to resolve the confidential owning key. This CorDapp provides two flows; one for generating confidential identities - `RequestKeyFlow`, and one for sharing them with another party `SyncKeyMappingFlow`.
 
-This version of confidential identities differs from the old version in that we do not store the X.509 certificates for each confidential identity. This greatly reduces the storage overhead for systems that require large quantities of confidential identities. 
+This version of confidential identities differs from the old version in that we do not store the X.509 certificates for each confidential identity. This greatly reduces the storage overhead for systems that require large quantities of confidential identities. By decoupling confidential identities from the certificates, this enables deniability to the  identities. The issuer of the confidential identity can choose not to provide proof that they created it if they don't want to share that information. 
 
 ### Generation of Confidential Identities
 
@@ -16,8 +16,9 @@ This process is provided entirely by calling `RequestKey` as an inline subflow. 
 
 * Alice requests a new confidential identity from Bob
 
-
    `aliceNode.subFlow(RequestKey(bob))`
+* Bob runs the counter-flow on his side 
+  `bobNode.subFlow(ProvideKeyFlow(aliceSession))`
 * Alice generates a new random `SHA256` value and sends this to Bob along with a request to generate a new key pair
 * Bob's `KeyManagementService` generates a new key pair and stores it 
     
@@ -31,9 +32,9 @@ This process is provided entirely by calling `RequestKey` as an inline subflow. 
   * The `PublicKey` matches that of the one used to sign over the concatenated `SHA256` values
   * That the decrypted concatenated value matches the same value as when she concatenates her `SHA256` and the one Bob sent 
 
-* If the above criteria is fulfilled, Alice can be assured that the key came from Bob and will store a mapping between the new `PublicKey` and Bob in here `IdentityService`
+* If the above criteria is fulfilled, Alice can be assured that the key came from Bob and will store a mapping between the new `PublicKey` and Bob in her `IdentityService`. The optional `UUID` parameter is available for use with accounts when you need to store a mapping between the `PublicKey` and `externalId`.
 
- ` serviceHub.identityService.registerKey(newKeyForBob, counterParty)`
+ ` serviceHub.identityService.registerKey(newKeyForBob: PublicKey, counterParty: Party, externalId: UUID? = null)`
 
 Once the flow has finished, both parties will both be able to lookup the well known party associated with the newly generated `PublicKey`. If a third party, not involved in the transaction attempts to resolve that `AnonymousParty`, they will not be able to. Thus, anonymising the identity from parties not present in the transaciton. 
 
@@ -75,4 +76,80 @@ This API persists a mapping between the new `PublicKey` and the account identiti
 1. `externalIdForPublicKey(publicKey: PublicKey) : UUID?`
 2. `publicKeysForExternalId(externalId: UUID): Iterable<PublicKey>` 
 
-These methods provide a mechanism to lookup an account identifier associated with a confidential identity or lookup the confidential `PublicKey`'s associated with a given account identifier. 
+These methods provide a mechanism to lookup an account identifier associated with a confidential identity or lookup the confidential `PublicKey`'s associated with a given account identifier.
+
+
+### Example Usage 
+
+Consider a simple `IOUFlow` between two parties in which we would want to utilise confidentital identities. It has one output state:
+`IOUState(value: Int, lender: AbstractParty, borrower: AbstractParty)`
+The flow and counter-flow would be as follows:
+
+```
+@InitiatingFlow
+@StartableByRPC
+class IOUFlow(val iouValue: Int, val otherParty: Party) : FlowLogic<Unit>() {
+    /** The progress tracker provides checkpoints indicating the progress of the flow to observers. */
+    override val progressTracker = ProgressTracker()
+    
+     @Suspendable
+    override fun call() {
+        // We retrieve the notary identity from the network map.
+        val notary = serviceHub.networkMapCache.notaryIdentities[0]
+
+        // We create a confidential identity for ourself acting as the lender
+        val anonymousLender = AnonymousParty(serviceHub.keyManagementService.freshKey())
+        
+        // Register the key in our identity service
+        serviceHub.identityService.registerKey(anonymousMe.owningKey, ourIdentity)
+        
+        // Creating a session with the other party.
+        val otherPartySession = initiateFlow(otherParty)
+        
+        // Create a confidential identity for the counter-party acting as the borrower
+        // Call counter-flow on the other side
+        val anonymousBorrower = subFlow(RequestKeyFlow(otherPartySession)) 
+        
+        // We create the transaction components.
+        val outputState = IOUState(iouValue, anonymousLender, anonymousBorrower)
+        val command = Command(IOUContract.Create(), listOf(anonymousLender.owningKey, anonymousBorrower.owningKey))
+        
+        val txBuilder = TransactionBuilder(notary = notary)
+                .addOutputState(outputState, IOUContract.ID)
+                .addCommand(command)
+
+        // Verifying the transaction.
+        txBuilder.verify(serviceHub)
+
+        // Signing the transaction.
+        val signedTx = serviceHub.signInitialTransaction(txBuilder)
+
+        // Obtaining the counterparty's signature.
+        val fullySignedTx = subFlow(CollectSignaturesFlow(signedTx, listOf(otherPartySession), CollectSignaturesFlow.tracker()))
+
+        // Finalising the transaction.
+        subFlow(FinalityFlow(fullySignedTx))
+    }
+}
+```
+
+```
+
+@InitiatedBy(IOUFlow::class)
+class IOUFlowResponder(val otherPartySession: FlowSession) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        subflow(ProvideKeyFlow(otherPartySession))
+        val signTransactionFlow = object : SignTransactionFlow(otherPartySession, SignTransactionFlow.tracker()) {
+            override fun checkTransaction(stx: SignedTransaction) = requireThat {
+                val output = stx.tx.outputs.single().data
+                "This must be an IOU transaction." using (output is IOUState)
+                val iou = output as IOUState
+                "The IOU's value can't be too high." using (iou.value < 100)
+            }
+        }
+
+        subFlow(signTransactionFlow)
+    }
+}
+```
