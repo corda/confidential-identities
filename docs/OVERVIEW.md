@@ -96,19 +96,12 @@ class IOUFlow(val iouValue: Int, val otherParty: Party) : FlowLogic<Unit>() {
     override fun call() {
         // We retrieve the notary identity from the network map.
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
-
-        // We create a confidential identity for ourself acting as the lender
-        val anonymousLenderKey = serviceHub.keyManagementService.freshKey()
-        
-        // Send to the counter-party so they can store it in their identity service
-        session.send(anonymousLenderKey)
         
         // Creating a session with the other party.
         val otherPartySession = initiateFlow(otherParty)
         
-        // The counter-flow to the RequestKeyFlow call on the otherside 
-        // This will register the mapping in our identity service 
-        subFlow(ProvideKeyFlow(otherSideSession)
+        // We create a confidential identity for ourself acting as the lender
+        val anonymousLender = subFlow(ProvideKeyFlow(otherPartySession))
         
         // Create a confidential identity for the counter-party acting as the borrower
         val anonymousBorrower = subFlow(RequestKeyFlow(otherPartySession)) 
@@ -141,14 +134,11 @@ class IOUFlow(val iouValue: Int, val otherParty: Party) : FlowLogic<Unit>() {
 class IOUFlowResponder(val otherPartySession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        // Receive the anonymouse lender key from the other party
-        val anonLenderKey = otherPartySession.receive<PublicKey>()
-        
         // Call request key flow with the lender key
-        subFlow(RequestKeyFlow(otherPartySession, onLenderKey)
+        subFlow(RequestKeyFlow(otherPartySession))
         
         // Counter flow to the RequestKeyFlow call on the other side 
-        subflow(ProvideKeyFlow(otherPartySession))
+        subFlow(ProvideKeyFlow(otherPartySession))
         val signTransactionFlow = object : SignTransactionFlow(otherPartySession, SignTransactionFlow.tracker()) {
             override fun checkTransaction(stx: SignedTransaction) = requireThat {
                 val output = stx.tx.outputs.single().data
