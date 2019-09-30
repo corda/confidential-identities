@@ -98,16 +98,19 @@ class IOUFlow(val iouValue: Int, val otherParty: Party) : FlowLogic<Unit>() {
         val notary = serviceHub.networkMapCache.notaryIdentities[0]
 
         // We create a confidential identity for ourself acting as the lender
-        val anonymousLender = AnonymousParty(serviceHub.keyManagementService.freshKey())
+        val anonymousLenderKey = serviceHub.keyManagementService.freshKey()
         
-        // Register the key in our identity service
-        serviceHub.identityService.registerKey(anonymousMe.owningKey, ourIdentity)
+        // Send to the counter-party so they can store it in their identity service
+        session.send(anonymousLenderKey)
         
         // Creating a session with the other party.
         val otherPartySession = initiateFlow(otherParty)
         
+        // The counter-flow to the RequestKeyFlow call on the otherside 
+        // This will register the mapping in our identity service 
+        subFlow(ProvideKeyFlow(otherSideSession)
+        
         // Create a confidential identity for the counter-party acting as the borrower
-        // Call counter-flow on the other side
         val anonymousBorrower = subFlow(RequestKeyFlow(otherPartySession)) 
         
         // We create the transaction components.
@@ -134,11 +137,17 @@ class IOUFlow(val iouValue: Int, val otherParty: Party) : FlowLogic<Unit>() {
 ```
 
 ```
-
 @InitiatedBy(IOUFlow::class)
 class IOUFlowResponder(val otherPartySession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        // Receive the anonymouse lender key from the other party
+        val anonLenderKey = otherPartySession.receive<PublicKey>()
+        
+        // Call request key flow with the lender key
+        subFlow(RequestKeyFlow(otherPartySession, onLenderKey)
+        
+        // Counter flow to the RequestKeyFlow call on the other side 
         subflow(ProvideKeyFlow(otherPartySession))
         val signTransactionFlow = object : SignTransactionFlow(otherPartySession, SignTransactionFlow.tracker()) {
             override fun checkTransaction(stx: SignedTransaction) = requireThat {
