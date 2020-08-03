@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.FlowException
+import net.corda.core.flows.FlowExternalAsyncOperation
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AnonymousParty
@@ -13,6 +14,9 @@ import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
 import java.security.PublicKey
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.function.Supplier
 
 /**
  * This flow registers a mapping in the [net.corda.core.node.services.IdentityService] between a [PublicKey] and a
@@ -160,3 +164,17 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
         return AnonymousParty(key)
     }
 }
+
+/*class ReceiveSignedKeyOperation(private val session: FlowSession, private val requestKey: SendRequestForKeyMapping)
+    : FlowExternalAsyncOperation<SignedKeyForAccount> {
+
+    override fun execute(deduplicationId: String): CompletableFuture<SignedKeyForAccount> {
+        return CompletableFuture.supplyAsync(
+                Supplier {
+                    todo: signedkeyforaccount code here
+                },
+                Executors.newFixedThreadPool(1)
+        )
+    }
+
+}*/
