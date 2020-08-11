@@ -1,6 +1,6 @@
 package com.r3.corda.lib.ci.tests
 
-import com.r3.corda.lib.ci.workflows.RequestKey
+/*import com.r3.corda.lib.ci.workflows.RequestKey
 import com.r3.corda.lib.ci.workflows.RequestKeyForUUIDInitiator
 import com.r3.corda.lib.ci.workflows.VerifyAndAddKey
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -132,4 +132,4 @@ class RequestKeyFlowTests {
         }
         assertEquals(expected, actual)
     }
-}
+}*/

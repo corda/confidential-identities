@@ -95,7 +95,9 @@ private constructor(
             else -> RequestFreshKey(challengeResponseParam)
         }
         // Either get back a signed key or a flow exception is thrown.
-        val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
+        println("calling rsk op")
+        val signedKeyForAccount = await(ReceiveSignedKeyOperation(session, requestKey))
+        println("finished rsk op")
         // We need to verify the signature of the response and check that the payload is equal to what we expect.
         progressTracker.currentStep = VERIFYING_KEY
         verifySignedChallengeResponseSignature(signedKeyForAccount)
@@ -165,16 +167,16 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
     }
 }
 
-/*class ReceiveSignedKeyOperation(private val session: FlowSession, private val requestKey: SendRequestForKeyMapping)
+class ReceiveSignedKeyOperation(private val session: FlowSession, private val requestKey: SendRequestForKeyMapping)
     : FlowExternalAsyncOperation<SignedKeyForAccount> {
 
     override fun execute(deduplicationId: String): CompletableFuture<SignedKeyForAccount> {
         return CompletableFuture.supplyAsync(
                 Supplier {
-                    todo: signedkeyforaccount code here
+                    session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
                 },
                 Executors.newFixedThreadPool(1)
         )
     }
 
-}*/
+}

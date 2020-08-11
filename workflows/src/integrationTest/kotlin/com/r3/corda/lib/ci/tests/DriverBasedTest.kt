@@ -1,6 +1,6 @@
 package com.r3.corda.lib.ci.tests
 
-import com.r3.corda.lib.ci.workflows.RequestKey
+/*import com.r3.corda.lib.ci.workflows.RequestKey
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingResponder
 import com.r3.corda.lib.ci.workflows.VerifyAndAddKey
@@ -159,4 +159,4 @@ class DriverBasedTest {
         assertEquals(ALICE_NAME, nodeC.resolveName(ALICE_NAME))
         assertEquals(BOB_NAME, nodeC.resolveName(BOB_NAME))
     }
-}
+}*/

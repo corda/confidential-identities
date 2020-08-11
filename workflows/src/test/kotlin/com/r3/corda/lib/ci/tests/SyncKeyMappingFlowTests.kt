@@ -1,6 +1,6 @@
 package com.r3.corda.lib.ci.tests
 
-import com.r3.corda.lib.ci.workflows.RequestKey
+/*import com.r3.corda.lib.ci.workflows.RequestKey
 import com.r3.corda.lib.ci.workflows.SyncKeyMappingInitiator
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
@@ -127,3 +127,4 @@ class SyncKeyMappingFlowTests {
 }
 
 
+*/
