@@ -9,9 +9,11 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.core.node.ServiceHub
 import net.corda.core.serialization.deserialize
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
+import org.slf4j.LoggerFactory
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -86,6 +88,8 @@ private constructor(
     @Suspendable
     @Throws(FlowException::class)
     override fun call(): AnonymousParty {
+        val logger = LoggerFactory.getLogger("ci-logger")
+        logger.info("Entered request key flow")
         progressTracker.currentStep = REQUESTING_KEY
         val challengeResponseParam = SecureHash.randomSHA256()
         // Handle whether a key is already specified or not and whether a UUID is specified, or not.
@@ -95,9 +99,7 @@ private constructor(
             else -> RequestFreshKey(challengeResponseParam)
         }
         // Either get back a signed key or a flow exception is thrown.
-        println("calling rsk op")
-        val signedKeyForAccount = await(ReceiveSignedKeyOperation(session, requestKey))
-        println("finished rsk op")
+        val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
         // We need to verify the signature of the response and check that the payload is equal to what we expect.
         progressTracker.currentStep = VERIFYING_KEY
         verifySignedChallengeResponseSignature(signedKeyForAccount)
@@ -165,18 +167,4 @@ class ProvideKeyFlow(private val otherSession: FlowSession) : FlowLogic<Anonymou
 
         return AnonymousParty(key)
     }
-}
-
-class ReceiveSignedKeyOperation(private val session: FlowSession, private val requestKey: SendRequestForKeyMapping)
-    : FlowExternalAsyncOperation<SignedKeyForAccount> {
-
-    override fun execute(deduplicationId: String): CompletableFuture<SignedKeyForAccount> {
-        return CompletableFuture.supplyAsync(
-                Supplier {
-                    session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
-                },
-                Executors.newFixedThreadPool(1)
-        )
-    }
-
 }
