@@ -38,7 +38,7 @@ Second, you must add the confidential identities development artifactory reposit
 list of repositories for your project:
 
     repositories {
-        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
+        maven { url 'http://software.r3.com/artifactory/corda-lib-dev' }
     }
 
 Now, you can add the confidential identities dependencies to the `dependencies` block
