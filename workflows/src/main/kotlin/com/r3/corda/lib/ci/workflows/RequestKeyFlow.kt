@@ -94,6 +94,11 @@ private constructor(
         val signedKeyForAccount = session.sendAndReceive<SignedKeyForAccount>(requestKey).unwrap { it }
         // We need to verify the signature of the response and check that the payload is equal to what we expect.
         progressTracker.currentStep = VERIFYING_KEY
+        key?.let {
+            require(it == signedKeyForAccount.publicKey) {
+                "PublicKey returned by counter-party was not the key we requested an ownership claim for."
+            }
+        }
         verifySignedChallengeResponseSignature(signedKeyForAccount)
         progressTracker.currentStep = KEY_VERIFIED
         // Ensure the hash of both challenge response parameters matches the received hashed function
