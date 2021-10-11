@@ -82,6 +82,10 @@ fun verifySignedChallengeResponseSignature(signedKeyForAccount: SignedKeyForAcco
     } catch (ex: SignatureException) {
         throw SignatureException("The signature on the object does not match that of the expected public key signature", ex)
     }
+    if (signedKeyForAccount.signedChallengeResponse.sig.by != signedKeyForAccount.publicKey) {
+        throw SignatureException("The public key used to sign the challenge response is not the same key " +
+                "returned as part of the SignedKeyForAccount")
+    }
 }
 
 /**
