@@ -28,8 +28,8 @@ installed locally:
 
     buildscript {
         ext {
-            corda_release_version = '4.3-RC01'
-            confidential_id_release_version = '1.0-RC02'
+            corda_release_version = '4.3'
+            confidential_id_release_version = '1.0'
             confidential_id_release_group = 'com.r3.corda.lib.ci'
         }
     }
