@@ -1,18 +1,18 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
-        corda_release_version = '4.3'
+        corda_release_version = '4.8'
         corda_gradle_plugins_version = '4.0.42'
         kotlin_version = '1.2.71'
         junit_version = '4.12'
-        quasar_version = '0.7.10'
+        quasar_version = '0.7.13_r3'
         slf4j_version = '1.7.25'
-        log4j_version = '2.15.0'
+        log4j_version = '2.17.1'
         corda_platform_version = '4'
         tokens_release_group='com.r3.corda.lib.tokens'
         tokens_sdk_version='1.0'
         confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0"
+        confidential_id_release_version = "1.1"
     }
 
     repositories {
@@ -45,10 +45,20 @@ allprojects {
     group "$confidential_id_release_group"
     apply plugin: 'kotlin'
 
+    //Ensure all transitive log4J depenndencies are up to date
+    configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.apache.logging.log4j') {
+            details.useVersion '2.17.1'
+        }
+     }
+    }
+
     repositories {
         mavenLocal()
         jcenter()
         mavenCentral()
+        maven { url "https://software.r3.com/artifactory/corda-dependencies" }
         maven { url 'https://software.r3.com/artifactory/corda-lib' }
         maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
         maven { url 'https://software.r3.com/artifactory/corda-releases' }
