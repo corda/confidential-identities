@@ -7,7 +7,6 @@ buildscript {
         corda_gradle_plugins_version =constants.getProperty('cordaGradlePluginsVersion')
         kotlin_version = constants.getProperty('kotlinVersion')
         junit_version = constants.getProperty('junitVersion')
-        quasar_version = constants.getProperty('quasarVersion')
         slf4j_version = constants.getProperty('slf4jVersion')
         log4j_version = constants.getProperty('log4jVersion')
         corda_platform_version = constants.getProperty('cordaPlatformVersion')
@@ -59,7 +58,6 @@ allprojects {
         maven { url "$artifactory_context_url/corda" }
         maven { url "$artifactory_context_url/corda-dependencies" }
         maven { url "$artifactory_context_url/corda-lib" }
-        maven { url "$artifactory_context_url/corda-lib-dev" }
         maven { url "$artifactory_context_url/corda-releases" }
     }
 
@@ -171,13 +169,6 @@ artifactory {
 }
 
 wrapper {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.6"
     distributionType = Wrapper.DistributionType.ALL
-}
-
-task installQuasar(type: Copy) {
-    destinationDir rootProject.file("lib")
-    from(configurations.quasar) {
-        rename 'quasar-core(.*).jar', 'quasar.jar'
-    }
 }
