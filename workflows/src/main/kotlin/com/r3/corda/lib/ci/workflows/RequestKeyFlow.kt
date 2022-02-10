@@ -99,7 +99,7 @@ private constructor(
                 "PublicKey returned by counter-party was not the key we requested an ownership claim for."
             }
         }
-        verifySignedChallengeResponseSignature(signedKeyForAccount)
+        verifySignedChallengeResponseSignature(signedKeyForAccount, key)
         progressTracker.currentStep = KEY_VERIFIED
         // Ensure the hash of both challenge response parameters matches the received hashed function
         progressTracker.currentStep = VERIFYING_CHALLENGE_RESPONSE
