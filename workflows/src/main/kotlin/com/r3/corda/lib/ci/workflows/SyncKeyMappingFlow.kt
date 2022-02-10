@@ -119,13 +119,22 @@ class SyncKeyMappingFlowHandler(private val otherSession: FlowSession) : FlowLog
     override fun call() {
         progressTracker.currentStep = RECEIVING_IDENTITIES
         val allConfidentialIds = otherSession.receive<List<AbstractParty>>().unwrap { it }
-        val unknownIdentities = allConfidentialIds.filter {
-            serviceHub.identityService.wellKnownPartyFromAnonymous(it) == null
-        }
-        otherSession.send(unknownIdentities)
+
+        // Return that all keys are unknown so that sender cannot tell who the receiver has been dealing with
+        otherSession.send(allConfidentialIds)
+
         progressTracker.currentStep = RECEIVING_PARTIES
 
-        val mapConfidentialKeyToParty = otherSession.receive<Map<PublicKey, Party>>().unwrap { it.toList() }
+        // Create a list of unknown public keys
+        val unknownIdentities = allConfidentialIds.filter {
+            serviceHub.identityService.wellKnownPartyFromAnonymous(it) == null
+        }.map { it.owningKey}
+
+        val mapConfidentialKeyToParty = otherSession
+            .receive<Map<PublicKey, Party>>()
+            .unwrap { it.toList() }
+            .filter { unknownIdentities.contains(it.first) }
+
         if (mapConfidentialKeyToParty.isEmpty()) {
             progressTracker.currentStep = NO_PARTIES_RECEIVED
         }
