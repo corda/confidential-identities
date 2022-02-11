@@ -122,7 +122,7 @@ class RequestKeyFlowTests {
         assertNull(bobNode.transaction { bobNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity) })
 
         // Request a new key mapping for the CI
-        bobNode.startFlow(VerifyAndAddKey(alice, confidentialIdentity.owningKey)).getOrThrow()
+       bobNode.startFlow(VerifyAndAddKey(alice, confidentialIdentity.owningKey)).getOrThrow()
 
         val expected = charlieNode.transaction {
             charlieNode.services.identityService.wellKnownPartyFromAnonymous(confidentialIdentity)
