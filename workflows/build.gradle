@@ -1,22 +1,6 @@
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
-cordapp {
-    signing {
-        enabled false
-    }
-    targetPlatformVersion corda_platform_version.toInteger()
-    minimumPlatformVersion corda_platform_version.toInteger()
-    workflow {
-        name "Confidential Identities Workflows"
-        vendor "Corda Open Source"
-        licence "Apache License, Version 2.0"
-        versionId 1
-    }
-}
-
-jar.baseName = "ci-workflows"
-
 sourceSets {
     main {
         resources {
@@ -52,9 +36,24 @@ dependencies {
     cordaRuntime "$corda_release_group:corda:$corda_release_version"
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
 
-    testCompile "$tokens_release_group:tokens-contracts:$tokens_sdk_version"
-    testCompile "$tokens_release_group:tokens-workflows:$tokens_sdk_version"
-    testCompile "$tokens_release_group:tokens-money:$tokens_sdk_version"
+    testCompile "$token_release_group:tokens-contracts:$token_release_version"
+    testCompile "$token_release_group:tokens-workflows:$token_release_version"
+    testCompile "$token_release_group:tokens-money:$token_release_version"
+}
+
+cordapp {
+    targetPlatformVersion corda_platform_version.toInteger()
+    minimumPlatformVersion corda_platform_version.toInteger()
+    workflow {
+        name "Confidential Identities Workflows"
+        vendor "Corda Open Source"
+        licence "Apache License, Version 2.0"
+        versionId 1
+    }
+}
+
+jar {
+    "ci-workflows"
 }
 
 task integrationTest(type: Test, dependsOn: []) {

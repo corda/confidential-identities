@@ -16,15 +16,22 @@ pipeline {
     }
 
     stages {
+
+       stage('build') {
+            steps {
+                sh "./gradlew assemble -Si"
+            }
+        }
+
         stage('Unit Tests') {
             steps {
-                sh "./gradlew clean test --info"
+                sh "./gradlew clean test -Si"
             }
         }
 
         stage('Integration Tests') {
             steps {
-                sh "./gradlew integrationTest --info"
+                sh "./gradlew integrationTest -Si"
             }
         }
     }

@@ -1,38 +1,35 @@
 buildscript {
+    Properties constants = new Properties()
+    file("$projectDir/./constants.properties").withInputStream { constants.load(it) }
     ext {
-        corda_release_group = 'net.corda'
-        corda_release_version = '4.3'
-        corda_gradle_plugins_version = '4.0.42'
-        kotlin_version = '1.2.71'
-        junit_version = '4.12'
-        quasar_version = '0.7.10'
-        slf4j_version = '1.7.25'
-        log4j_version = '2.15.0'
-        corda_platform_version = '4'
-        tokens_release_group='com.r3.corda.lib.tokens'
-        tokens_sdk_version='1.0'
-        confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0"
+        corda_release_group = constants.getProperty('cordaReleaseGroup')
+        corda_release_version = constants.getProperty('cordaReleaseVersion')
+        corda_gradle_plugins_version =constants.getProperty('cordaGradlePluginsVersion')
+        kotlin_version = constants.getProperty('kotlinVersion')
+        junit_version = constants.getProperty('junitVersion')
+        slf4j_version = constants.getProperty('slf4jVersion')
+        log4j_version = constants.getProperty('log4jVersion')
+        corda_platform_version = constants.getProperty('cordaPlatformVersion')
+        token_release_group= constants.getProperty('tokenReleaseGroup')
+        token_release_version= constants.getProperty('tokenReleaseVersion')
+        confidential_id_release_group = constants.getProperty('confidentialIdReleaseGroup')
+        confidential_id_release_version = constants.getProperty('confidentialIdReleaseVersion')
+        artifactory_context_url = constants.getProperty('artifactoryContextUrl')
     }
 
     repositories {
-        jcenter()
-        mavenCentral()
         mavenLocal()
-        maven { url 'https://jitpack.io' }
-        maven { url "https://software.r3.com/artifactory/corda-dev" }
+        mavenCentral()
         maven { url "https://software.r3.com/artifactory/corda-releases" }
-        maven { url 'https://software.r3.com/artifactory/corda-lib' }
-        maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
-        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
+        maven { url "https://repo.gradle.org/gradle/libs-releases-local/" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
-        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
     }
 }
 
@@ -45,15 +42,23 @@ allprojects {
     group "$confidential_id_release_group"
     apply plugin: 'kotlin'
 
+    //Ensure all transitive log4J depenndencies are up to date
+    configurations.all {
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.group == 'org.apache.logging.log4j') {
+            details.useVersion '2.17.1'
+        }
+     }
+    }
+
     repositories {
-        mavenLocal()
-        jcenter()
         mavenCentral()
-        maven { url 'https://software.r3.com/artifactory/corda-lib' }
-        maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
-        maven { url 'https://software.r3.com/artifactory/corda-releases' }
-        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
+        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
+        maven { url "$artifactory_context_url/corda" }
+        maven { url "$artifactory_context_url/corda-dependencies" }
+        maven { url "$artifactory_context_url/corda-lib" }
+        maven { url "$artifactory_context_url/corda-releases" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
@@ -164,13 +169,6 @@ artifactory {
 }
 
 wrapper {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.6"
     distributionType = Wrapper.DistributionType.ALL
-}
-
-task installQuasar(type: Copy) {
-    destinationDir rootProject.file("lib")
-    from(configurations.quasar) {
-        rename 'quasar-core(.*).jar', 'quasar.jar'
-    }
 }
