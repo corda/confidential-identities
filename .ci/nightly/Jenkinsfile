@@ -1,0 +1,69 @@
+import static com.r3.build.BuildControl.killAllExistingBuildsForJob
+@Library('existing-build-control')
+import static com.r3.build.BuildControl.killAllExistingBuildsForJob
+
+killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
+
+pipeline {
+    agent {
+        dockerfile {
+            filename '.ci/Dockerfile'
+        }
+    }
+    options { timestamps() }
+
+    environment {
+        EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
+        ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
+    }
+
+    stages {
+        stage('NexusIQ Check') {
+                steps {
+                    script {
+                        sh "./gradlew --no-daemon properties | grep -E '^(version|group):' >version-properties"
+                        /* every build related to Corda X.Y (GA, RC, HC, patch or snapshot) uses the same NexusIQ application */
+                        def version = sh (returnStdout: true, script: "grep ^version: version-properties | sed -e 's/^version: \\([0-9]\\+\\(\\.[0-9]\\+\\)\\+\\).*\$/\\1/'").trim()
+                        def groupId = sh (returnStdout: true, script: "grep ^group: version-properties | sed -e 's/^group: //'").trim()
+                        def artifactId = 'confidential-identities'
+                        nexusAppId = "${groupId}-${artifactId}-latest"
+                    }
+                    nexusPolicyEvaluation (
+                        failBuildOnNetworkError: true,
+                        iqApplication: selectedApplication(nexusAppId), // application *has* to exist before a build starts!
+                        iqScanPatterns: [[scanPattern: '**/*.jar']],
+                        iqStage: "build"
+                    )
+                }
+            }
+        stage('Unit Tests') {
+            steps {
+                sh "./gradlew clean test --info"
+            }
+        }
+
+        stage('Integration Tests') {
+            steps {
+                sh "./gradlew integrationTest --info"
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh "./gradlew " +
+                        " -Dcorda.artifactory.username=\"\${ARTIFACTORY_CREDENTIALS_USR}\" " +
+                        " -Dcorda.artifactory.password=\"\${ARTIFACTORY_CREDENTIALS_PSW}\" " +
+                        " artifactoryPublish "
+            }
+        }
+    }
+
+    post {
+        always {
+            junit '**/build/test-results/**/*.xml'
+        }
+        cleanup {
+            deleteDir() /* clean up our workspace */
+        }
+    }
+}
