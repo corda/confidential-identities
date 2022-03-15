@@ -15,7 +15,9 @@ cordapp {
     }
 }
 
-jar.archiveBaseName = "ci-workflows"
+jar {
+    baseName "ci-workflows"
+}
 
 sourceSets {
     main {
