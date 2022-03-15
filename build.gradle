@@ -140,7 +140,7 @@ configure(publishProjects) { subproject ->
                 from components.java
 
                 groupId subproject.group
-                artifactId subproject.jar.baseName
+                artifactId "ci-${subproject.name}"
                 artifact tasks.sourceJar
                 artifact tasks.javadocJar
 
