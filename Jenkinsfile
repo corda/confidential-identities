@@ -130,13 +130,10 @@ pipeline {
             }
         }
     }
-
     post {
-        
         always {
             junit '**/build/test-results/**/*.xml'
         }
-
         success {
         	script {
                 if (isReleaseTag || isReleaseCandidate || isReleaseBranch) {
@@ -144,7 +141,6 @@ pipeline {
                 }
             }
         }
-        
         cleanup {
             deleteDir() /* clean up our workspace */
         }

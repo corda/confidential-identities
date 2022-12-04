@@ -13,10 +13,9 @@ buildscript {
         token_release_group= constants.getProperty('tokenReleaseGroup')
         token_release_version= constants.getProperty('tokenReleaseVersion')
         confidential_id_release_group = constants.getProperty('confidentialIdReleaseGroup')
+        artifactory_context_url = constants.getProperty('artifactoryContextUrl')
         confidential_id_release_version = constants.getProperty('confidentialIdReleaseVersion')
         confidential_id_versionSuffix = constants.getProperty('versionSuffix')
-
-        artifactory_context_url = constants.getProperty('artifactoryContextUrl')
     }
 
     repositories {
