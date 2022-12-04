@@ -105,7 +105,7 @@ pipeline {
                 dir(mavenLocal) {
                     script {
                         fileToScan = findFiles(
-                            excludes: '**/*-javadoc.jar',
+                            excludes: '**/*-javadoc.jar, **/*-sources.jar',
                             glob: '**/*.jar, **/*.zip'
                         ).collect {
                             f -> [scanPattern: f.path]
