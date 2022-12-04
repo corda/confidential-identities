@@ -14,6 +14,8 @@ buildscript {
         token_release_version= constants.getProperty('tokenReleaseVersion')
         confidential_id_release_group = constants.getProperty('confidentialIdReleaseGroup')
         confidential_id_release_version = constants.getProperty('confidentialIdReleaseVersion')
+        confidential_id_versionSuffix = constants.getProperty('versionSuffix')
+
         artifactory_context_url = constants.getProperty('artifactoryContextUrl')
     }
 
@@ -38,7 +40,7 @@ plugins {
 }
 
 allprojects {
-    version "$confidential_id_release_version"
+    version "$confidential_id_release_version$confidential_id_versionSuffix"
     group "$confidential_id_release_group"
     apply plugin: 'kotlin'
 
