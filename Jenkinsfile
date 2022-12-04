@@ -22,9 +22,8 @@ def nexusIqStageChoices = [nexusDefaultIqStage].plus(
         'operate'
     ].minus([nexusDefaultIqStage]))
 
-boolean isReleaseBranch = (env.BRANCH_NAME = ~/^release\/.*/)
-boolean isReleaseTag = (env.TAG_NAME = ~/^release-.*$/)
-boolean isReleaseCandidate = (env.TAG_NAME = ~/^(release-.*(RC|HC).*)$/)
+boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
+boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)
 
 pipeline {
     agent {
@@ -68,7 +67,7 @@ pipeline {
 
         stage('Snyk Security Scan') {
             when {
-                expression { isReleaseTag || isReleaseCandidate || isReleaseBranch }
+                expression { isReleaseTag || isReleaseBranch }
             }
             steps {
                 script {
@@ -135,7 +134,7 @@ pipeline {
 
         stage('Publish to Artifactory') {
             when {
-                expression { isReleaseTag || isReleaseCandidate }
+                expression { isReleaseTag }
             }
             steps {
                 echo "helo"
@@ -150,7 +149,7 @@ pipeline {
         }
         success {
             script {
-                if (isReleaseTag || isReleaseCandidate || isReleaseBranch) {
+                if (isReleaseTag || isReleaseBranch) {
                     snykSecurityScan.generateHtmlElements()
                 }
             }
