@@ -123,7 +123,7 @@ pipeline {
 
         stage('Unit Tests') {
             steps {
-                sh "./gradlew clean test -Si"
+                sh "./gradlew test -Si"
             }
         }
 
@@ -138,8 +138,7 @@ pipeline {
                 expression { isReleaseTag }
             }
             steps {
-                echo "helo"
-                // sh "./gradlew artifactoryPublish -Si"
+                sh "./gradlew artifactoryPublish -Si"
             }
         }
     }
