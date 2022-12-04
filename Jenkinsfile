@@ -9,23 +9,22 @@ String mavenLocal = 'tmp/mavenlocal'
 
 def nexusDefaultIqStage = "build"
 
-
 /**
  * make sure calculated default value of NexusIQ stage is first in the list
  * thus making it default for the `choice` parameter
  */
 def nexusIqStageChoices = [nexusDefaultIqStage].plus(
-                [
-                        'develop',
-                        'build',
-                        'stage-release',
-                        'release',
-                        'operate'
-                ].minus([nexusDefaultIqStage]))
+    [
+        'develop',
+        'build',
+        'stage-release',
+        'release',
+        'operate'
+    ].minus([nexusDefaultIqStage]))
 
-boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
-boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)
-boolean isReleaseCandidate = (env.TAG_NAME =~ /^(release-.*(RC|HC).*)$/)               
+boolean isReleaseBranch = (env.BRANCH_NAME = ~/^release\/.*/)
+boolean isReleaseTag = (env.TAG_NAME = ~/^release-.*$/)
+boolean isReleaseCandidate = (env.TAG_NAME = ~/^(release-.*(RC|HC).*)$/)
 
 pipeline {
     agent {
@@ -41,81 +40,84 @@ pipeline {
         }
     }
 
-    options { timestamps() }
+    options {
+        timestamps()
+    }
 
     parameters {
         choice choices: nexusIqStageChoices, description: 'NexusIQ stage for code evaluation', name: 'nexusIqStage'
     }
 
-
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
-        SNYK_TOKEN  = credentials("c4-sdk-snyk")
+        SNYK_TOKEN = credentials("c4-sdk-snyk")
         MAVEN_LOCAL_PUBLISH = "${env.WORKSPACE}/${mavenLocal}"
         GRADLE_USER_HOME = "/host_tmp/gradle"
     }
 
     stages {
-
-       stage('build') {
+        stage('build') {
             steps {
                 sh "./gradlew clean assemble -Si"
             }
         }
 
-       stage('Snyk Security') {
-            when { branch pattern: "release\\/.+", comparator: "REGEXP"}
+        stage('Snyk Security') {
+            when {
+                anyOf {
+                    branch pattern: "release\\/.*", comparator: "REGEXP"
+                    tag pattern: "release.*", comparator: "REGEXP"
+                }
+            }
             steps {
                 script {
-                    // Invoke Snyk for each Gradle sub project we wish to scan
-                    def currentBranch = sh(returnStdout: true, script: "git branch --show-current").trim()
                     def modulesToScan = ['workflows']
-                    modulesToScan.each { module ->
-                        snykSecurityScan("${env.SNYK_TOKEN}", "--sub-project=$module --configuration-matching='^runtimeClasspath\$' --prune-repeated-subdependencies --debug --target-reference='${currentBranch}' --project-tags=Branch='${env.BRANCH_NAME.replaceAll("[^0-9|a-z|A-Z]+","_")}'", false, true)
+                    modulesToScan.each {
+                        module ->
+                            snykSecurityScan("${env.SNYK_TOKEN}", "--sub-project=$module --configuration-matching='^runtimeClasspath\$' --prune-repeated-subdependencies --debug --target-reference='${env.BRANCH_NAME}' --project-tags=Branch='${env.BRANCH_NAME.replaceAll(" [ ^ 0 - 9 | a - z | A - Z] + ","_ ")}'", false, true)
                     }
                 }
             }
-         }
+        }
 
         stage('Local Publish') {
             steps {
                 script {
                     sh 'rm -rf $MAVEN_LOCAL_PUBLISH'
                     sh 'mkdir -p $MAVEN_LOCAL_PUBLISH'
-                    sh './gradlew publishToMavenLocal -Dmaven.repo.local="${MAVEN_LOCAL_PUBLISH}"' 
+                    sh './gradlew publishToMavenLocal -Dmaven.repo.local="${MAVEN_LOCAL_PUBLISH}"'
                     sh 'ls -lR "${MAVEN_LOCAL_PUBLISH}"'
-
                 }
             }
         }
 
         stage('Sonatype Check') {
             steps {
-                
-              script{
+                script {
                     def props = readProperties file: 'gradle.properties'
                     version = props['version']
                     groupId = props['group']
                     def artifactId = 'ci-workflows'
                     nexusAppId = "${groupId}-${artifactId}-${version}"
-                    echo "${groupId}-${artifactId}-${version}"                  
-              }
-                        
-                dir(mavenLocal) {                        
-                        script {
-                            fileToScan = findFiles(
-                                excludes: '**/*-javadoc.jar',
-                                glob: '**/*.jar, **/*.zip'
-                            ).collect { f -> [scanPattern: f.path] }
-                        }
-                        nexusPolicyEvaluation(
-                            failBuildOnNetworkError: true,
-                            iqApplication: nexusAppId, // application *has* to exist before a build starts!
-                            iqScanPatterns: fileToScan,
-                            iqStage:  params.nexusIqStage
-                        )
+                    echo "${groupId}-${artifactId}-${version}"
                 }
-             }
+                dir(mavenLocal) {
+                    script {
+                        fileToScan = findFiles(
+                            excludes: '**/*-javadoc.jar',
+                            glob: '**/*.jar, **/*.zip'
+                        ).collect {
+                            f -> [scanPattern: f.path]
+                        }
+                    }
+                    nexusPolicyEvaluation(
+                        failBuildOnNetworkError: true,
+                        iqApplication: nexusAppId, // application *has* to exist before a build starts!
+                        iqScanPatterns: fileToScan,
+                        iqStage: params.nexusIqStage
+                    )
+                }
+            }
         }
 
         stage('Unit Tests') {
@@ -129,13 +131,25 @@ pipeline {
                 sh "./gradlew integrationTest -Si"
             }
         }
+
+        stage('Publish to Artifactory') {
+            when {
+                when {
+                    tag pattern: "release.*", comparator: "REGEXP"
+                }
+            }
+            steps {
+                echo "helo"
+                // sh "./gradlew artifactoryPublish -Si"
+            }
+        }
     }
     post {
         always {
             junit '**/build/test-results/**/*.xml'
         }
         success {
-        	script {
+            script {
                 if (isReleaseTag || isReleaseCandidate || isReleaseBranch) {
                     snykSecurityScan.generateHtmlElements()
                 }
