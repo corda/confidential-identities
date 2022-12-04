@@ -1,7 +1,26 @@
-@Library('existing-build-control')
+@Library('corda-shared-build-pipeline-steps')
 import static com.r3.build.BuildControl.killAllExistingBuildsForJob
 
 killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
+
+@Field
+String mavenLocal = 'tmp/mavenlocal'
+
+def nexusDefaultIqStage = "build"
+
+
+/**
+ * make sure calculated default value of NexusIQ stage is first in the list
+ * thus making it default for the `choice` parameter
+ */
+def nexusIqStageChoices = [nexusDefaultIqStage].plus(
+                [
+                        'develop',
+                        'build',
+                        'stage-release',
+                        'release',
+                        'operate'
+                ].minus([nexusDefaultIqStage]))
 
 pipeline {
     agent {
@@ -10,6 +29,11 @@ pipeline {
         }
     }
     options { timestamps() }
+
+    parameters {
+        choice choices: nexusIqStageChoices, description: 'NexusIQ stage for code evaluation', name: 'nexusIqStage'
+    }
+
 
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
@@ -34,6 +58,47 @@ pipeline {
                     }
                 }
             }
+        }
+
+        stage('Local Publish') {
+            steps {
+                script {
+                    sh 'rm -rf $MAVEN_LOCAL_PUBLISH'
+                    sh 'mkdir -p $MAVEN_LOCAL_PUBLISH'
+                    sh './gradlew publishToMavenLocal -Dmaven.repo.local="${MAVEN_LOCAL_PUBLISH}"' 
+                    sh 'ls -lR "${MAVEN_LOCAL_PUBLISH}"'
+
+                }
+            }
+        }
+
+        stage('Sonatype Check') {
+            steps {
+                
+              script{
+                    def props = readProperties file: 'gradle.properties'
+                    version = props['version']
+                    groupId = props['group']
+                    def artifactId = 'ci-workflows'
+                    nexusAppId = "${groupId}-${artifactId}-${version}"
+                    echo "${groupId}-${artifactId}-${version}"                  
+              }
+                        
+                dir(mavenLocal) {                        
+                        script {
+                            fileToScan = findFiles(
+                                excludes: '**/*-javadoc.jar',
+                                glob: '**/*.jar, **/*.zip'
+                            ).collect { f -> [scanPattern: f.path] }
+                        }
+                        nexusPolicyEvaluation(
+                            failBuildOnNetworkError: true,
+                            iqApplication: nexusAppId, // application *has* to exist before a build starts!
+                            iqScanPatterns: fileToScan,
+                            iqStage:  params.nexusIqStage
+                        )
+                }
+             }
         }
 
         stage('Unit Tests') {
