@@ -66,7 +66,7 @@ pipeline {
             }
         }
 
-        stage('Snyk Security') {
+        stage('Snyk Security Scan') {
             when {
                 expression { isReleaseTag || isReleaseCandidate || isReleaseBranch }
             }
@@ -92,7 +92,7 @@ pipeline {
             }
         }
 
-        stage('Sonatype Check') {
+        stage('Nexus Scan') {
             steps {
                 script {
                     def props = readProperties file: 'gradle.properties'
