@@ -41,6 +41,7 @@ pipeline {
 
     options {
         timestamps()
+        buildDiscarder(logRotator(daysToKeepStr: '14', artifactDaysToKeepStr: '14'))
     }
 
     parameters {
