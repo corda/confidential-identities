@@ -49,10 +49,14 @@ pipeline {
     }
 
     environment {
-        EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
-        SNYK_TOKEN = credentials("c4-sdk-snyk")
-        MAVEN_LOCAL_PUBLISH = "${env.WORKSPACE}/${mavenLocal}"
+        ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
+        CORDA_ARTIFACTORY_USERNAME = "${env.ARTIFACTORY_CREDENTIALS_USR}"
+        CORDA_ARTIFACTORY_PASSWORD = "${env.ARTIFACTORY_CREDENTIALS_PSW}"
+        CORDA_GRADLE_SCAN_KEY = credentials('gradle-build-scans-key')
         GRADLE_USER_HOME = "/host_tmp/gradle"
+        EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
+        MAVEN_LOCAL_PUBLISH = "${env.WORKSPACE}/${mavenLocal}"
+        SNYK_TOKEN  = credentials("c4-sdk-snyk")
     }
 
     stages {
@@ -134,8 +138,7 @@ pipeline {
 
         stage('Publish to Artifactory') {
             when {
-                    tag pattern: "release.*", comparator: "REGEXP"
-                }
+                tag pattern: "release.*", comparator: "REGEXP"
             }
             steps {
                 echo "helo"
