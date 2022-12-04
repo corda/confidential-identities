@@ -1,5 +1,6 @@
 @Library('corda-shared-build-pipeline-steps')
 import static com.r3.build.BuildControl.killAllExistingBuildsForJob
+import groovy.transform.Field
 
 killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 
