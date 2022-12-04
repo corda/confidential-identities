@@ -134,7 +134,6 @@ pipeline {
 
         stage('Publish to Artifactory') {
             when {
-                when {
                     tag pattern: "release.*", comparator: "REGEXP"
                 }
             }
