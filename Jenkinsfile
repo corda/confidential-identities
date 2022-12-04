@@ -68,10 +68,7 @@ pipeline {
 
         stage('Snyk Security') {
             when {
-                anyOf {
-                    branch pattern: "release\\/.*", comparator: "REGEXP"
-                    tag pattern: "release.*", comparator: "REGEXP"
-                }
+                expression { isReleaseTag || isReleaseCandidate || isReleaseBranch }
             }
             steps {
                 script {
@@ -138,7 +135,7 @@ pipeline {
 
         stage('Publish to Artifactory') {
             when {
-                tag pattern: "release.*", comparator: "REGEXP"
+                expression { isReleaseTag || isReleaseCandidate }
             }
             steps {
                 echo "helo"
@@ -149,6 +146,7 @@ pipeline {
     post {
         always {
             junit '**/build/test-results/**/*.xml'
+            findBuildScans()
         }
         success {
             script {
