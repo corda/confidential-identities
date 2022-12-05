@@ -16,11 +16,10 @@ def nexusDefaultIqStage = "build"
 def nexusIqStageChoices = [nexusDefaultIqStage].plus(
     [
         'develop',
-        'build',
         'stage-release',
         'release',
         'operate'
-    ].minus([nexusDefaultIqStage]))
+    ])
 
 boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
 boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)

@@ -41,7 +41,12 @@ plugins {
 }
 
 allprojects {
-    version "$confidential_id_release_version$confidential_id_versionSuffix"
+    if (confidential_id_versionSuffix.isEmpty()) {
+        version confidential_id_release_version
+    } else {
+        version "$confidential_id_release_version-$confidential_id_versionSuffix"
+    }
+
     group "$confidential_id_release_group"
     apply plugin: 'kotlin'
 
