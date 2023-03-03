@@ -55,7 +55,7 @@ pipeline {
         GRADLE_USER_HOME = "/host_tmp/gradle"
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
         MAVEN_LOCAL_PUBLISH = "${env.WORKSPACE}/${mavenLocal}"
-        SNYK_TOKEN  = credentials("c4-sdk-snyk")
+        SNYK_TOKEN  = credentials('c4-ent-snyk-api-token-secret')
     }
 
     stages {
