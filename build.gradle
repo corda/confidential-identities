@@ -14,6 +14,7 @@ buildscript {
         token_release_version= constants.getProperty('tokenReleaseVersion')
         confidential_id_release_group = constants.getProperty('confidentialIdReleaseGroup')
         artifactory_context_url = constants.getProperty('artifactoryContextUrl')
+        public_artifact_url = constants.getProperty('publicArtifactURL')
         confidential_id_release_version = constants.getProperty('confidentialIdReleaseVersion')
         confidential_id_versionSuffix = constants.getProperty('versionSuffix')
     }
@@ -21,7 +22,7 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url "https://software.r3.com/artifactory/corda-releases" }
+        maven { url "${public_artifact_url}/corda-releases" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local/" }
     }
 
@@ -64,10 +65,10 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
-        maven { url "$artifactory_context_url/corda" }
-        maven { url "$artifactory_context_url/corda-dependencies" }
-        maven { url "$artifactory_context_url/corda-lib" }
-        maven { url "$artifactory_context_url/corda-releases" }
+        maven { url "$public_artifact_url/corda" }
+        maven { url "$public_artifact_url/corda-dependencies" }
+        maven { url "$public_artifact_url/corda-lib" }
+        maven { url "$public_artifact_url/corda-releases" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
@@ -179,7 +180,7 @@ configure(publishProjects) { subproject ->
 
 artifactory {
     publish {
-        contextUrl = 'https://software.r3.com/artifactory'
+        contextUrl = artifactory_context_url
         repository {
             repoKey = 'corda-lib'
             username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
