@@ -29,7 +29,6 @@ pipeline {
         cron (isReleaseBranch ? 'H 0 * * 1,4' : '')
     }
 
-
     environment {
         ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
         CORDA_ARTIFACTORY_USERNAME = "${env.ARTIFACTORY_CREDENTIALS_USR}"
