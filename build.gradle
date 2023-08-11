@@ -171,7 +171,26 @@ configure(publishProjects) { subproject ->
                 artifact tasks.javadocJar
 
                 pom {
-                    description = subproject.description
+                    name = subproject.name
+                    description = "confidential-identities ${subproject.name}"
+                    url = 'https://github.com/corda/confidential-identities'
+                    scm {
+                        url = 'https://github.com/corda/confidential-identities'
+                    }
+                    licenses {
+                        license {
+                            name = 'Apache-2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0'
+                            distribution = 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'R3'
+                            name = 'R3'
+                            email = 'dev@corda.net'
+                        }
+                    }
                 }
             }
         }
