@@ -1,23 +1,19 @@
-@Library('corda-shared-build-pipeline-steps')
+@Library('existing-build-control')
 import static com.r3.build.BuildControl.killAllExistingBuildsForJob
+import groovy.transform.Field
 
 killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 
 boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
 boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)
+boolean isRelease = isReleaseTag || isReleaseBranch
+String publishOptions = isRelease ? "-s --info" : "--no-daemon -s -PversionFromGit"
 
 pipeline {
-    agent {
-        docker {
-            // Our custom docker image
-            image 'build-zulu-openjdk:8'
-            label 'standard'
-            registryUrl 'https://engineering-docker.software.r3.com/'
-            registryCredentialsId 'artifactory-credentials'
-            // Used to mount storage from the host as a volume to persist the cache between builds
-            args '-v /tmp:/host_tmp'
-            alwaysPull true
-        }
+    agent { label 'standard' }
+
+    parameters {
+        booleanParam name: 'DO_PUBLISH', defaultValue: isRelease, description: 'Publish artifacts to Artifactory?'
     }
 
     options {
@@ -34,9 +30,9 @@ pipeline {
         CORDA_ARTIFACTORY_USERNAME = "${env.ARTIFACTORY_CREDENTIALS_USR}"
         CORDA_ARTIFACTORY_PASSWORD = "${env.ARTIFACTORY_CREDENTIALS_PSW}"
         CORDA_GRADLE_SCAN_KEY = credentials('gradle-build-scans-key')
-        GRADLE_USER_HOME = "/host_tmp/gradle"
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
         SNYK_TOKEN  = credentials('c4-ent-snyk-api-token-secret')
+        JAVA_HOME="/usr/lib/jvm/java-17-amazon-corretto"
     }
 
     stages {
@@ -75,18 +71,37 @@ pipeline {
 
         stage('Publish to Artifactory') {
             when {
-                expression { isReleaseTag }
+                expression { params.DO_PUBLISH }
+                beforeAgent true
             }
             steps {
-                sh "./gradlew artifactoryPublish -Si"
+                rtServer(
+                        id: 'R3-Artifactory',
+                        url: 'https://software.r3.com/artifactory',
+                        credentialsId: 'artifactory-credentials'
+                )
+                rtGradleDeployer(
+                        id: 'deployer',
+                        serverId: 'R3-Artifactory',
+                        repo: isRelease ? 'corda-lib' : 'corda-lib-dev'
+                )
+                rtGradleRun(
+                        usesPlugin: true,
+                        useWrapper: true,
+                        switches: publishOptions,
+                        tasks: 'artifactoryPublish',
+                        deployerId: 'deployer',
+                        buildName: env.ARTIFACTORY_BUILD_NAME
+                )
+                rtPublishBuildInfo(
+                        serverId: 'R3-Artifactory',
+                        buildName: env.ARTIFACTORY_BUILD_NAME
+                )
             }
         }
     }
+
     post {
-        always {
-            junit '**/build/test-results/**/*.xml'
-            findBuildScans()
-        }
         success {
             script {
                 if (isReleaseTag || isReleaseBranch) {
