@@ -16,8 +16,6 @@ buildscript {
         slf4j_version = constants.getProperty('slf4jVersion')
         log4j_version = constants.getProperty('log4jVersion')
         corda_platform_version = constants.getProperty('cordaPlatformVersion')
-        token_release_group= constants.getProperty('tokenReleaseGroup')
-        token_release_version= constants.getProperty('tokenReleaseVersion')
         artifactory_context_url = constants.getProperty('artifactoryContextUrl')
         public_artifact_url = constants.getProperty('publicArtifactURL')
 
@@ -37,7 +35,13 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url "${public_artifact_url}/corda-releases" }
+        maven {
+            url "${artifactory_context_url}/corda-releases"
+            credentials {
+                username = findProperty('cordaArtifactoryUsername') ?: System.getenv('CORDA_ARTIFACTORY_USERNAME')
+                password = findProperty('cordaArtifactoryPassword') ?: System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            }
+        }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local/" }
     }
 
@@ -123,10 +127,22 @@ allprojects {
         maven { url 'https://jitpack.io' }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url "$public_artifact_url/corda" }
-        maven { url "$public_artifact_url/corda-releases" }
+        maven {
+            url "$artifactory_context_url/corda-releases"
+            credentials {
+                username = findProperty('cordaArtifactoryUsername') ?: System.getenv('CORDA_ARTIFACTORY_USERNAME')
+                password = findProperty('cordaArtifactoryPassword') ?: System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            }
+        }
         maven { url "$public_artifact_url/corda-dependencies" }
         maven { url "$public_artifact_url/corda-lib" }
-        maven { url "$public_artifact_url/corda-releases" }
+        maven {
+            url "$artifactory_context_url/corda-releases"
+            credentials {
+                username = findProperty('cordaArtifactoryUsername') ?: System.getenv('CORDA_ARTIFACTORY_USERNAME')
+                password = findProperty('cordaArtifactoryPassword') ?: System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            }
+        }
         maven {
             url "$artifactory_context_url/corda-dev"
             authentication {
