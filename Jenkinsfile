@@ -6,14 +6,14 @@ killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 
 boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
 boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)
-boolean isRelease = isReleaseTag || isReleaseBranch
-String publishOptions = isRelease ? "-s --info" : "--no-daemon -s -PversionFromGit"
+boolean isRelease = isReleaseTag
+String publishOptions = isReleaseBranch ? "-s --info" : "--no-daemon -s -PversionFromGit"
 
 pipeline {
     agent { label 'standard' }
 
     parameters {
-        booleanParam name: 'DO_PUBLISH', defaultValue: isRelease, description: 'Publish artifacts to Artifactory?'
+        booleanParam name: 'DO_PUBLISH', defaultValue: (isReleaseBranch || isRelease), description: 'Publish artifacts to Artifactory?'
     }
 
     options {
