@@ -7,7 +7,7 @@ killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 boolean isReleaseBranch = (env.BRANCH_NAME =~ /^release\/.*/)
 boolean isReleaseTag = (env.TAG_NAME =~ /^release-.*$/)
 boolean isRelease = isReleaseTag
-String publishOptions = isReleaseBranch ? "-s --info" : "--no-daemon -s -PversionFromGit"
+String publishOptions = (isReleaseBranch || isReleaseTag) ? "-s --info" : "--no-daemon -s -PversionFromGit"
 
 pipeline {
     agent { label 'standard' }
