@@ -242,6 +242,6 @@ configure(publishProjects) { subproject ->
 }
 
 wrapper {
-    gradleVersion = "7.6"
+    gradleVersion = "7.6.4"
     distributionType = Wrapper.DistributionType.ALL
 }
