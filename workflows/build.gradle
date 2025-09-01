@@ -40,7 +40,7 @@ sourceSets {
 }
 
 dependencies {
-    cordaProvided "$corda_release_group:corda-core:$corda_release_version"
+    cordaProvided "$corda_core_release_group:corda-core:$corda_core_release_version"
 
     implementation "org.slf4j:slf4j-api:$slf4j_version"
 

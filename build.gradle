@@ -8,6 +8,8 @@ buildscript {
         baseVersion = constants.getProperty('baseVersion')
         versionSuffix = constants.getProperty('versionSuffix')
 
+        corda_core_release_group = constants.getProperty('cordaCoreReleaseGroup')
+        corda_core_release_version = constants.getProperty('cordaCoreReleaseVersion')
         corda_release_group = constants.getProperty('cordaReleaseGroup')
         corda_release_version = constants.getProperty('cordaReleaseVersion')
         corda_gradle_plugins_version =constants.getProperty('cordaGradlePluginsVersion')
@@ -175,7 +177,7 @@ cordapp {
 
 dependencies {
     // Corda dependencies.
-    cordaProvided "$corda_release_group:corda-core:$corda_release_version"
+    cordaProvided "$corda_core_release_group:corda-core:$corda_core_release_version"
     cordaProvided "$corda_release_group:corda-node-api:$corda_release_version"
 
     // CorDapp dependencies.
